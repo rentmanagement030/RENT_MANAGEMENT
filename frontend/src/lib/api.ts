@@ -47,7 +47,11 @@ import type {
   TaxSettings,
 } from "../types";
 
-const BASE = import.meta.env.VITE_API_URL || "/api";
+let BASE = import.meta.env.VITE_API_URL || "/api";
+if (BASE.startsWith("http") && !BASE.endsWith("/api")) {
+  if (BASE.endsWith("/")) BASE = BASE.slice(0, -1);
+  BASE = BASE + "/api";
+}
 
 export class ApiClientError extends Error {
   status: number;
