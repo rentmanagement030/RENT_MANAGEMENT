@@ -70,7 +70,7 @@ export const env = {
   ),
 
   cookieSecure:
-    process.env.COOKIE_SECURE === "true",
+    process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production",
 
   firebaseProjectId: process.env.FIREBASE_PROJECT_ID ?? "",
   firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL ?? "",
