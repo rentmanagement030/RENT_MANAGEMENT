@@ -15,6 +15,9 @@ import routes from "./routes";
 export function createApp(): Express {
   const app = express();
 
+  // Trust reverse proxy (e.g., Render, Heroku) so secure cookies work over HTTPS
+  app.set("trust proxy", 1);
+
   // ------------------------------------------------------------
   // Security
   // ------------------------------------------------------------
