@@ -19,7 +19,7 @@ export type AuthUser = NonNullable<Express.Request["user"]>;
 export const SESSION_COOKIE = "rm_session";
 export const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
-  sameSite: "strict" as const,
+  sameSite: process.env.NODE_ENV === "production" ? ("none" as const) : ("strict" as const),
   secure: process.env.NODE_ENV === "production",
   path: "/",
 };
