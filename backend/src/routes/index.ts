@@ -1,0 +1,46 @@
+import { Router } from "express";
+import authRoutes from "./auth.routes";
+import userRoutes from "./user.routes";
+import propertyRoutes from "./property.routes";
+import tenantRoutes from "./tenant.routes";
+import rentRoutes from "./rent.routes";
+import paymentRoutes from "./payment.routes";
+import razorpayRoutes from "./razorpay.routes";
+import publicRoutes from "./public.routes";
+import systemRoutes from "./system.routes";
+import opsRoutes from "./ops.routes";
+import notificationRoutes from "./notification.routes";
+import fileRoutes from "./file.routes";
+import billRoutes from "./bill.routes";
+import tenantAuthRoutes from "./tenantAuth.routes";
+import crmRoutes from "./crm.routes";
+import visitRoutes from "./visit.routes";
+import bookingRoutes from "./booking.routes";
+import staffVendorRoutes from "./staffVendor.routes";
+import guestLeaveRoutes from "./guestLeave.routes";
+import taxRoutes from "./tax.routes";
+
+const router = Router();
+
+router.use("/public", publicRoutes);
+router.use("/auth", authRoutes);
+router.use("/tenant-auth", tenantAuthRoutes);
+router.use("/users", userRoutes);
+router.use("/properties", propertyRoutes);
+router.use("/taxes", taxRoutes);
+router.use("/tenants", tenantRoutes);
+router.use("/rent", rentRoutes);
+router.use("/bills", billRoutes);
+router.use("/payments", paymentRoutes);
+router.use("/razorpay", razorpayRoutes);
+router.use("/crm", crmRoutes);
+router.use("/visits", visitRoutes);
+router.use("/bookings", bookingRoutes);
+router.use("/ops/staff-vendors", staffVendorRoutes);
+router.use("/pg", guestLeaveRoutes);
+router.use("/system", systemRoutes);
+router.use("/ops", opsRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/files", fileRoutes);
+
+export default router;

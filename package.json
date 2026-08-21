@@ -1,0 +1,30 @@
+{
+  "name": "rental-management",
+  "version": "1.0.0",
+  "private": true,
+  "description": "C2D Tech Rental Management System - React + Node + Express + PostgreSQL",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace backend",
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace backend && npm run build --workspace frontend",
+    "build:backend": "npm run build --workspace backend",
+    "build:frontend": "npm run build --workspace frontend",
+    "start": "npm run start --workspace backend",
+    "lint": "npm run lint --workspace backend && npm run lint --workspace frontend",
+    "typecheck": "npm run typecheck --workspace backend && npm run typecheck --workspace frontend",
+    "test": "npm run test --workspace backend",
+    "db:migrate": "npm run db:migrate --workspace backend",
+    "db:seed": "npm run db:seed --workspace backend",
+    "db:clean": "npm run db:clean --workspace backend",
+    "db:studio": "npm run db:studio --workspace backend",
+    "db:generate": "npm run db:generate --workspace backend"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

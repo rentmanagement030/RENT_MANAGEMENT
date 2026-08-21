@@ -1,0 +1,176 @@
+import { useEffect, useRef, useState } from "react";
+import { Download, FileText, Maximize, Minimize, Printer, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Button } from "@/components/ui/primitives";
+
+interface FileViewerProps {
+  open: boolean;
+  name: string;
+  url: string;
+  onClose: () => void;
+}
+
+const IMAGE_RE = /\.(jpe?g|png|gif|webp|avif|bmp)$/i;
+const PDF_RE = /\.pdf$/i;
+
+export default function FileViewer({ open, name, url, onClose }: FileViewerProps) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const isImage = IMAGE_RE.test(name) || IMAGE_RE.test(url);
+  const isPdf = PDF_RE.test(name) || PDF_RE.test(url);
+
+  const [zoom, setZoom] = useState(1);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setZoom(1);
+    setFullscreen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setFullscreen(false);
+    }
+  };
+
+  const print = () => {
+    const win = iframeRef.current?.contentWindow;
+    if (win) {
+      try {
+        win.focus();
+        win.print();
+        return;
+      } catch {
+        /* same-origin fallback */
+      }
+    }
+    window.print();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-slate-900/95 backdrop-blur-md" role="dialog" aria-modal="true" aria-label={name}>
+      {/* Top Controls Bar */}
+      <div className="flex items-center justify-between border-b border-slate-700/80 bg-slate-900 px-4 py-3 text-white">
+        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+          <FileText className="size-5 shrink-0 text-blue-400" />
+          <p className="min-w-0 truncate text-sm font-extrabold text-slate-100">{name}</p>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isImage && (
+            <>
+              <button
+                type="button"
+                className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+                onClick={() => setZoom((z) => Math.min(z + 0.25, 3))}
+                title="Zoom In"
+              >
+                <ZoomIn className="size-4" />
+              </button>
+              <button
+                type="button"
+                className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+                onClick={() => setZoom((z) => Math.max(z - 0.25, 0.5))}
+                title="Zoom Out"
+              >
+                <ZoomOut className="size-4" />
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+            onClick={toggleFullscreen}
+            title="Fullscreen"
+          >
+            {fullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
+          </button>
+
+          {isPdf && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:inline-flex border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white"
+              onClick={print}
+            >
+              <Printer className="size-3.5" /> Print
+            </Button>
+          )}
+
+          <a
+            href={url}
+            download={name}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
+          >
+            <Download className="size-3.5" /> <span className="hidden sm:inline">Download</span>
+          </a>
+
+          <button
+            type="button"
+            className="ml-1 rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Preview Container */}
+      <div className="flex min-h-0 flex-1 items-center justify-center p-4 overflow-auto" onClick={onClose}>
+        {isImage ? (
+          <img
+            src={url}
+            alt={name}
+            style={{ transform: `scale(${zoom})`, transition: "transform 0.2s ease" }}
+            className="max-h-full max-w-full rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : isPdf ? (
+          <iframe
+            ref={iframeRef}
+            src={url}
+            title={name}
+            className="h-full w-full max-w-5xl rounded-xl border border-slate-700/80 bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <div className="flex flex-col items-center gap-3.5 p-8 text-center text-slate-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex size-16 items-center justify-center rounded-2xl bg-slate-800 text-blue-400 border border-slate-700">
+              <FileText className="size-8" />
+            </div>
+            <div>
+              <p className="text-base font-extrabold text-white">{name}</p>
+              <p className="mt-1 max-w-xs text-xs font-medium text-slate-400">
+                This document format can be downloaded for viewing on your device.
+              </p>
+            </div>
+            <a
+              href={url}
+              download={name}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors"
+            >
+              <Download className="size-4" /> Download File
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

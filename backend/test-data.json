@@ -1,0 +1,649 @@
+{
+  "dataset": "C2D Rentals Financial Consistency Test Data",
+  "environment": "TEST_ONLY",
+  "period": "2026-08",
+  "properties": [
+    {
+      "propertyType": "HOUSE",
+      "propertyName": "Green View House",
+      "buildingDoorNumber": "14/B",
+      "streetAddress": "14/B Lake View Main Road",
+      "city": "Chennai",
+      "areaLocality": "Velachery",
+      "primaryContactPhone": "+91 90000 10001",
+      "ebMeterNumber": "EB-H-001",
+      "rent": 18000,
+      "securityDeposit": 36000,
+      "maxCapacity": 1,
+      "initialStatus": "AVAILABLE",
+      "overduePenaltyPerDay": 50,
+      "rentDueDay": 5,
+      "floors": []
+    },
+    {
+      "propertyType": "PG",
+      "propertyName": "C2D Residency PG",
+      "buildingDoorNumber": "22/A",
+      "streetAddress": "22/A Main Road",
+      "city": "Chennai",
+      "areaLocality": "Thoraipakkam",
+      "primaryContactPhone": "+91 90000 10002",
+      "ebMeterNumber": "EB-PG-002",
+      "rent": 0,
+      "securityDeposit": 0,
+      "maxCapacity": 4,
+      "initialStatus": "AVAILABLE",
+      "overduePenaltyPerDay": 50,
+      "rentDueDay": 5,
+      "floors": [
+        {
+          "name": "Ground Floor",
+          "homes": [
+            {
+              "name": "Room 101",
+              "unitType": "PG_ROOM",
+              "capacity": 2,
+              "rent": 8500,
+              "securityDeposit": 10000
+            },
+            {
+              "name": "Room 102",
+              "unitType": "PG_ROOM",
+              "capacity": 2,
+              "rent": 8000,
+              "securityDeposit": 10000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "propertyType": "MULTI_HOME",
+      "propertyName": "Royal Garden Homes",
+      "buildingDoorNumber": "8/C",
+      "streetAddress": "8/C Garden Avenue",
+      "city": "Chennai",
+      "areaLocality": "Sholinganallur",
+      "primaryContactPhone": "+91 90000 10003",
+      "ebMeterNumber": "EB-MH-003",
+      "rent": 0,
+      "securityDeposit": 0,
+      "maxCapacity": 3,
+      "initialStatus": "AVAILABLE",
+      "overduePenaltyPerDay": 75,
+      "rentDueDay": 3,
+      "floors": [
+        {
+          "name": "Ground Floor",
+          "homes": [
+            {
+              "name": "Home 1",
+              "unitType": "HOME",
+              "capacity": 1,
+              "rent": 22000,
+              "securityDeposit": 44000
+            },
+            {
+              "name": "Home 2",
+              "unitType": "HOME",
+              "capacity": 1,
+              "rent": 23000,
+              "securityDeposit": 46000
+            }
+          ]
+        },
+        {
+          "name": "1st Floor",
+          "homes": [
+            {
+              "name": "Home 3",
+              "unitType": "HOME",
+              "capacity": 1,
+              "rent": 24000,
+              "securityDeposit": 48000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "propertyType": "MULTI_UNIT_HOUSE",
+      "propertyName": "Lakshmi Multi Unit House",
+      "buildingDoorNumber": "31/A",
+      "streetAddress": "31/A Temple Street",
+      "city": "Chennai",
+      "areaLocality": "Perungudi",
+      "primaryContactPhone": "+91 90000 10004",
+      "ebMeterNumber": "EB-MU-004",
+      "rent": 0,
+      "securityDeposit": 0,
+      "maxCapacity": 3,
+      "initialStatus": "AVAILABLE",
+      "overduePenaltyPerDay": 60,
+      "rentDueDay": 5,
+      "floors": [
+        {
+          "name": "Ground Floor",
+          "homes": [
+            {
+              "name": "Ground Unit",
+              "unitType": "INDEPENDENT_FLOOR",
+              "capacity": 1,
+              "rent": 16000,
+              "securityDeposit": 32000
+            }
+          ]
+        },
+        {
+          "name": "1st Floor",
+          "homes": [
+            {
+              "name": "First Floor Unit",
+              "unitType": "INDEPENDENT_FLOOR",
+              "capacity": 1,
+              "rent": 17000,
+              "securityDeposit": 34000
+            }
+          ]
+        },
+        {
+          "name": "2nd Floor",
+          "homes": [
+            {
+              "name": "Second Floor Unit",
+              "unitType": "INDEPENDENT_FLOOR",
+              "capacity": 1,
+              "rent": 18000,
+              "securityDeposit": 36000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "propertyType": "APARTMENT",
+      "propertyName": "Sunrise Apartment Complex",
+      "buildingDoorNumber": "5/10",
+      "streetAddress": "5/10 Sunrise Main Road",
+      "city": "Chennai",
+      "areaLocality": "Pallikaranai",
+      "primaryContactPhone": "+91 90000 10005",
+      "ebMeterNumber": "EB-APT-005",
+      "rent": 0,
+      "securityDeposit": 0,
+      "maxCapacity": 4,
+      "initialStatus": "AVAILABLE",
+      "overduePenaltyPerDay": 50,
+      "rentDueDay": 3,
+      "floors": [
+        {
+          "name": "Ground Floor",
+          "homes": [
+            {
+              "name": "Flat G-01",
+              "unitType": "APARTMENT_UNIT",
+              "capacity": 1,
+              "rent": 18000,
+              "securityDeposit": 36000
+            },
+            {
+              "name": "Flat G-02",
+              "unitType": "APARTMENT_UNIT",
+              "capacity": 1,
+              "rent": 19000,
+              "securityDeposit": 38000
+            }
+          ]
+        },
+        {
+          "name": "1st Floor",
+          "homes": [
+            {
+              "name": "Flat 101",
+              "unitType": "APARTMENT_UNIT",
+              "capacity": 1,
+              "rent": 20000,
+              "securityDeposit": 40000
+            },
+            {
+              "name": "Flat 102",
+              "unitType": "APARTMENT_UNIT",
+              "capacity": 1,
+              "rent": 21000,
+              "securityDeposit": 42000
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "taxRecords": [
+    {
+      "propertyName": "Green View House",
+      "taxType": "PROPERTY_TAX",
+      "assessmentNumber": "PT-1001",
+      "taxFrequency": "ANNUAL",
+      "taxAmount": 18000,
+      "taxPeriod": "2026-27",
+      "nextDueDate": "2026-08-21"
+    },
+    {
+      "propertyName": "C2D Residency PG",
+      "taxType": "PROPERTY_TAX",
+      "assessmentNumber": "PT-1002",
+      "taxFrequency": "ANNUAL",
+      "taxAmount": 24000,
+      "taxPeriod": "2026-27",
+      "nextDueDate": "2026-09-15"
+    },
+    {
+      "propertyName": "Royal Garden Homes",
+      "taxType": "WATER_TAX",
+      "assessmentNumber": "WT-1003",
+      "taxFrequency": "ANNUAL",
+      "taxAmount": 6000,
+      "taxPeriod": "2026-27",
+      "nextDueDate": "2026-10-10"
+    },
+    {
+      "propertyName": "Lakshmi Multi Unit House",
+      "taxType": "PROPERTY_TAX",
+      "assessmentNumber": "PT-1004",
+      "taxFrequency": "ANNUAL",
+      "taxAmount": 27000,
+      "taxPeriod": "2026-27",
+      "nextDueDate": "2026-11-05"
+    },
+    {
+      "propertyName": "Sunrise Apartment Complex",
+      "taxType": "WATER_TAX",
+      "assessmentNumber": "WT-1005",
+      "taxFrequency": "ANNUAL",
+      "taxAmount": 7200,
+      "taxPeriod": "2026-27",
+      "nextDueDate": "2026-12-01"
+    }
+  ],
+  "tenants": [
+    {
+      "fullName": "Arun Kumar",
+      "phone": "+91 90000 11001",
+      "email": "arun.test@example.com",
+      "propertyName": "Green View House",
+      "unit": "PROPERTY",
+      "agreedMonthlyRent": 18000,
+      "securityDeposit": 36000,
+      "joiningDate": "2026-08-01",
+      "rentDueDay": 5
+    },
+    {
+      "fullName": "Santhosh M",
+      "phone": "+91 90000 11002",
+      "email": "santhosh.test@example.com",
+      "propertyName": "C2D Residency PG",
+      "unit": "Room 101 / Bed A",
+      "agreedMonthlyRent": 8500,
+      "securityDeposit": 10000,
+      "joiningDate": "2026-08-05",
+      "rentDueDay": 5
+    },
+    {
+      "fullName": "Priya Raj",
+      "phone": "+91 90000 11003",
+      "email": "priya.test@example.com",
+      "propertyName": "Royal Garden Homes",
+      "unit": "Home 1",
+      "agreedMonthlyRent": 22000,
+      "securityDeposit": 44000,
+      "joiningDate": "2026-08-01",
+      "rentDueDay": 3
+    },
+    {
+      "fullName": "Karthik S",
+      "phone": "+91 90000 11004",
+      "email": "karthik.test@example.com",
+      "propertyName": "Lakshmi Multi Unit House",
+      "unit": "First Floor Unit",
+      "agreedMonthlyRent": 17000,
+      "securityDeposit": 34000,
+      "joiningDate": "2026-08-03",
+      "rentDueDay": 5
+    },
+    {
+      "fullName": "Meena Devi",
+      "phone": "+91 90000 11005",
+      "email": "meena.test@example.com",
+      "propertyName": "Sunrise Apartment Complex",
+      "unit": "Flat 101",
+      "agreedMonthlyRent": 20000,
+      "securityDeposit": 40000,
+      "joiningDate": "2026-08-02",
+      "rentDueDay": 3
+    }
+  ],
+  "agreements": [
+    {
+      "tenant": "Arun Kumar",
+      "propertyUnit": "Green View House",
+      "startDate": "2026-08-01",
+      "endDate": "2027-07-31",
+      "monthlyRent": 18000,
+      "securityDeposit": 36000
+    },
+    {
+      "tenant": "Santhosh M",
+      "propertyUnit": "C2D Residency PG / Room 101 / Bed A",
+      "startDate": "2026-08-05",
+      "endDate": "2027-08-04",
+      "monthlyRent": 8500,
+      "securityDeposit": 10000
+    },
+    {
+      "tenant": "Priya Raj",
+      "propertyUnit": "Royal Garden Homes / Home 1",
+      "startDate": "2026-08-01",
+      "endDate": "2027-07-31",
+      "monthlyRent": 22000,
+      "securityDeposit": 44000
+    },
+    {
+      "tenant": "Karthik S",
+      "propertyUnit": "Lakshmi Multi Unit House / First Floor Unit",
+      "startDate": "2026-08-03",
+      "endDate": "2027-08-02",
+      "monthlyRent": 17000,
+      "securityDeposit": 34000
+    },
+    {
+      "tenant": "Meena Devi",
+      "propertyUnit": "Sunrise Apartment Complex / Flat 101",
+      "startDate": "2026-08-02",
+      "endDate": "2027-08-01",
+      "monthlyRent": 20000,
+      "securityDeposit": 40000
+    }
+  ],
+  "bills": [
+    {
+      "billNumber": "TEST-AUG-001",
+      "billType": "RENT",
+      "resident": "Arun Kumar",
+      "propertyUnit": "Green View House",
+      "amount": 18000,
+      "billingMonth": "2026-08",
+      "dueDate": "2026-08-05"
+    },
+    {
+      "billNumber": "TEST-AUG-002",
+      "billType": "RENT",
+      "resident": "Santhosh M",
+      "propertyUnit": "C2D Residency PG / Room 101 / Bed A",
+      "amount": 8500,
+      "billingMonth": "2026-08",
+      "dueDate": "2026-08-05"
+    },
+    {
+      "billNumber": "TEST-AUG-003",
+      "billType": "RENT",
+      "resident": "Priya Raj",
+      "propertyUnit": "Royal Garden Homes / Home 1",
+      "amount": 22000,
+      "billingMonth": "2026-08",
+      "dueDate": "2026-08-03"
+    },
+    {
+      "billNumber": "TEST-AUG-004",
+      "billType": "RENT",
+      "resident": "Karthik S",
+      "propertyUnit": "Lakshmi Multi Unit House / First Floor Unit",
+      "amount": 17000,
+      "billingMonth": "2026-08",
+      "dueDate": "2026-08-05"
+    },
+    {
+      "billNumber": "TEST-AUG-005",
+      "billType": "RENT",
+      "resident": "Meena Devi",
+      "propertyUnit": "Sunrise Apartment Complex / Flat 101",
+      "amount": 20000,
+      "billingMonth": "2026-08",
+      "dueDate": "2026-08-03"
+    },
+    {
+      "billNumber": "TEST-AUG-006",
+      "billType": "EB",
+      "resident": "Arun Kumar",
+      "propertyUnit": "Green View House",
+      "amount": 750,
+      "billingMonth": "2026-08",
+      "dueDate": "2026-08-31"
+    },
+    {
+      "billNumber": "TEST-AUG-007",
+      "billType": "WATER",
+      "resident": "Santhosh M",
+      "propertyUnit": "C2D Residency PG / Room 101 / Bed A",
+      "amount": 600,
+      "billingMonth": "2026-08",
+      "dueDate": "2026-08-31"
+    },
+    {
+      "billNumber": "TEST-AUG-008",
+      "billType": "MAINTENANCE",
+      "resident": "Priya Raj",
+      "propertyUnit": "Royal Garden Homes / Home 1",
+      "amount": 1200,
+      "billingMonth": "2026-08",
+      "dueDate": "2026-08-31"
+    },
+    {
+      "billNumber": "TEST-AUG-009",
+      "billType": "OTHER",
+      "resident": "Karthik S",
+      "propertyUnit": "Lakshmi Multi Unit House / First Floor Unit",
+      "amount": 1000,
+      "billingMonth": "2026-08",
+      "dueDate": "2026-08-31"
+    }
+  ],
+  "payments": [
+    {
+      "paymentNumber": "TEST-PAY-001",
+      "resident": "Arun Kumar",
+      "amount": 18000,
+      "paymentDate": "2026-08-05",
+      "method": "UPI",
+      "allocations": [
+        {
+          "billNumber": "TEST-AUG-001",
+          "amount": 18000
+        }
+      ]
+    },
+    {
+      "paymentNumber": "TEST-PAY-002",
+      "resident": "Santhosh M",
+      "amount": 5000,
+      "paymentDate": "2026-08-06",
+      "method": "CASH",
+      "allocations": [
+        {
+          "billNumber": "TEST-AUG-002",
+          "amount": 5000
+        }
+      ]
+    },
+    {
+      "paymentNumber": "TEST-PAY-003",
+      "resident": "Priya Raj",
+      "amount": 10000,
+      "paymentDate": "2026-08-07",
+      "method": "BANK",
+      "allocations": [
+        {
+          "billNumber": "TEST-AUG-003",
+          "amount": 10000
+        }
+      ]
+    },
+    {
+      "paymentNumber": "TEST-PAY-004",
+      "resident": "Arun Kumar",
+      "amount": 750,
+      "paymentDate": "2026-08-10",
+      "method": "UPI",
+      "allocations": [
+        {
+          "billNumber": "TEST-AUG-006",
+          "amount": 750
+        }
+      ]
+    },
+    {
+      "paymentNumber": "TEST-PAY-005",
+      "resident": "Santhosh M",
+      "amount": 600,
+      "paymentDate": "2026-08-12",
+      "method": "CASH",
+      "allocations": [
+        {
+          "billNumber": "TEST-AUG-007",
+          "amount": 600
+        }
+      ]
+    }
+  ],
+  "expenses": [
+    {
+      "category": "ELECTRICITY",
+      "amount": 8500,
+      "propertyName": "Green View House",
+      "expenseDate": "2026-08-06",
+      "description": "EB bill payment"
+    },
+    {
+      "category": "REPAIRS",
+      "amount": 4500,
+      "propertyName": "Lakshmi Multi Unit House",
+      "expenseDate": "2026-08-08",
+      "description": "Plumbing repairs"
+    },
+    {
+      "category": "STAFF",
+      "amount": 30000,
+      "propertyName": "C2D Residency PG",
+      "expenseDate": "2026-08-10",
+      "description": "August caretaker salary"
+    },
+    {
+      "category": "CLEANING",
+      "amount": 3000,
+      "propertyName": "C2D Residency PG",
+      "expenseDate": "2026-08-12",
+      "description": "Housekeeping"
+    },
+    {
+      "category": "MAINTENANCE",
+      "amount": 2500,
+      "propertyName": "Sunrise Apartment Complex",
+      "expenseDate": "2026-08-15",
+      "description": "Lift maintenance"
+    },
+    {
+      "category": "PROPERTY_TAX",
+      "amount": 5000,
+      "propertyName": "Green View House",
+      "expenseDate": "2026-08-21",
+      "description": "Property tax payment"
+    }
+  ],
+  "maintenanceRequests": [
+    {
+      "propertyName": "Green View House",
+      "category": "PLUMBING",
+      "assignStaff": "Ravi Kumar",
+      "assignVendor": "Chennai Plumbing Works",
+      "priority": "HIGH",
+      "estimatedCost": 3500,
+      "issueDescription": "Bathroom pipe leaking."
+    },
+    {
+      "propertyName": "C2D Residency PG",
+      "category": "ELECTRICAL",
+      "assignStaff": "Mohan Raj",
+      "assignVendor": "Bright Electrical Services",
+      "priority": "MEDIUM",
+      "estimatedCost": 2000,
+      "issueDescription": "Room 101 light not working."
+    },
+    {
+      "propertyName": "Sunrise Apartment Complex",
+      "category": "GENERAL",
+      "assignStaff": "Suresh Kumar",
+      "assignVendor": "CleanPro Services",
+      "priority": "LOW",
+      "estimatedCost": 1500,
+      "issueDescription": "Common area door requires repair."
+    }
+  ],
+  "staff": [
+    {
+      "fullName": "Ravi Kumar",
+      "phone": "+91 90000 12001",
+      "role": "CARETAKER",
+      "properties": [
+        "Green View House",
+        "Lakshmi Multi Unit House"
+      ]
+    },
+    {
+      "fullName": "Mohan Raj",
+      "phone": "+91 90000 12002",
+      "role": "MANAGER",
+      "properties": [
+        "C2D Residency PG"
+      ]
+    },
+    {
+      "fullName": "Suresh Kumar",
+      "phone": "+91 90000 12003",
+      "role": "CARETAKER",
+      "properties": [
+        "Royal Garden Homes",
+        "Sunrise Apartment Complex"
+      ]
+    }
+  ],
+  "vendors": [
+    {
+      "vendorName": "Chennai Plumbing Works",
+      "phone": "+91 90000 13001",
+      "serviceType": "PLUMBING",
+      "companyName": "Chennai Plumbing Works",
+      "properties": [
+        "Green View House",
+        "Lakshmi Multi Unit House"
+      ]
+    },
+    {
+      "vendorName": "Bright Electrical Services",
+      "phone": "+91 90000 13002",
+      "serviceType": "ELECTRICIAN",
+      "companyName": "Bright Electrical Services",
+      "properties": [
+        "C2D Residency PG",
+        "Sunrise Apartment Complex"
+      ]
+    },
+    {
+      "vendorName": "CleanPro Services",
+      "phone": "+91 90000 13003",
+      "serviceType": "CLEANING",
+      "companyName": "CleanPro Services",
+      "properties": [
+        "C2D Residency PG",
+        "Royal Garden Homes"
+      ]
+    }
+  ]
+}
