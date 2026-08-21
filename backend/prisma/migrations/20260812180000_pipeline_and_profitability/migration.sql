@@ -19,9 +19,46 @@ ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "maintenanceId" TEXT,
 ADD COLUMN IF NOT EXISTS "vendorId" TEXT,
 ADD COLUMN IF NOT EXISTS "staffId" TEXT;
 
--- AlterTable Lead
-ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "roomId" TEXT,
-ADD COLUMN IF NOT EXISTS "bedId" TEXT;
+-- CreateEnum
+CREATE TYPE "LeadStatus" AS ENUM ('NEW', 'CONTACTED', 'VISIT_SCHEDULED', 'VISIT_DONE', 'NEGOTIATION', 'CONVERTED', 'LOST', 'NOT_INTERESTED');
+
+-- CreateTable Lead
+CREATE TABLE IF NOT EXISTS "Lead" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "email" TEXT,
+    "propertyId" TEXT,
+    "roomId" TEXT,
+    "bedId" TEXT,
+    "roomType" TEXT,
+    "budget" DECIMAL(12,2),
+    "moveInDate" TIMESTAMP(3),
+    "source" TEXT,
+    "notes" TEXT,
+    "status" "LeadStatus" NOT NULL DEFAULT 'NEW',
+    "followUpDate" TIMESTAMP(3),
+    "assignedStaffId" TEXT,
+    "convertedTenantId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "Lead_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Lead_convertedTenantId_key" ON "Lead"("convertedTenantId");
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Lead_propertyId_fkey') THEN
+    ALTER TABLE "Lead" ADD CONSTRAINT "Lead_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Lead_assignedStaffId_fkey') THEN
+    ALTER TABLE "Lead" ADD CONSTRAINT "Lead_assignedStaffId_fkey" FOREIGN KEY ("assignedStaffId") REFERENCES "Staff"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Lead_convertedTenantId_fkey') THEN
+    ALTER TABLE "Lead" ADD CONSTRAINT "Lead_convertedTenantId_fkey" FOREIGN KEY ("convertedTenantId") REFERENCES "Tenant"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- CreateIndexes & ForeignKeys
 CREATE UNIQUE INDEX IF NOT EXISTS "MaintenanceRequest_expenseId_key" ON "MaintenanceRequest"("expenseId");
