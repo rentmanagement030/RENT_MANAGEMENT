@@ -197,12 +197,20 @@ export default function NotificationsPage() {
 function ComposeDialog({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: () => void }) {
   const { success, error: toastError } = useToast();
   const { data: tenants } = useQuery({ queryKey: ["tenants", "all"], queryFn: () => api.listTenants({ pageSize: 200 }) });
-  const [form, setForm] = useState({ tenantId: "", channel: "WHATSAPP", type: "GENERAL", subject: "", body: "" });
+  const [form, setForm] = useState({
+    tenantId: "",
+    to: "",
+    channel: "WHATSAPP",
+    type: "GENERAL",
+    subject: "",
+    body: "",
+  });
 
   const mutation = useMutation({
     mutationFn: () =>
       api.sendNotification({
         tenantId: form.tenantId || undefined,
+        to: form.to || undefined,
         channel: form.channel,
         type: form.type,
         subject: form.subject || undefined,
@@ -231,8 +239,11 @@ function ComposeDialog({ open, onClose, onSaved }: { open: boolean; onClose: () 
         >
           <div className="space-y-1.5">
             <Label>Tenant</Label>
-            <Select value={form.tenantId} onChange={(e) => setForm((f) => ({ ...f, tenantId: e.target.value }))}>
-              <option value="">All / manual recipient</option>
+            <Select
+              value={form.tenantId}
+              onChange={(e) => setForm((f) => ({ ...f, tenantId: e.target.value }))}
+            >
+              <option value="">Manual recipient / Custom Number</option>
               {(tenants?.items ?? []).map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name} · {t.phone}
@@ -240,14 +251,36 @@ function ComposeDialog({ open, onClose, onSaved }: { open: boolean; onClose: () 
               ))}
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <Label>Channel *</Label>
-            <Select value={form.channel} onChange={(e) => setForm((f) => ({ ...f, channel: e.target.value }))}>
-              <option value="WHATSAPP">WhatsApp</option>
-              <option value="EMAIL">Email</option>
-              <option value="SMS">SMS</option>
-            </Select>
-          </div>
+          {!form.tenantId ? (
+            <div className="space-y-1.5">
+              <Label>Recipient Phone / Email *</Label>
+              <Input
+                required
+                placeholder="e.g. 7904006320"
+                value={form.to}
+                onChange={(e) => setForm((f) => ({ ...f, to: e.target.value }))}
+              />
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label>Channel *</Label>
+              <Select value={form.channel} onChange={(e) => setForm((f) => ({ ...f, channel: e.target.value }))}>
+                <option value="WHATSAPP">WhatsApp</option>
+                <option value="EMAIL">Email</option>
+                <option value="SMS">SMS</option>
+              </Select>
+            </div>
+          )}
+          {!form.tenantId && (
+            <div className="space-y-1.5">
+              <Label>Channel *</Label>
+              <Select value={form.channel} onChange={(e) => setForm((f) => ({ ...f, channel: e.target.value }))}>
+                <option value="WHATSAPP">WhatsApp</option>
+                <option value="EMAIL">Email</option>
+                <option value="SMS">SMS</option>
+              </Select>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Type</Label>
             <Select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
