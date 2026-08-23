@@ -6,7 +6,13 @@ import { SESSION_COOKIE } from "./auth/types";
 
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
-    const token = req.cookies?.[SESSION_COOKIE];
+    let token = req.cookies?.[SESSION_COOKIE];
+    
+    // Fallback for Safari/Mobile cross-domain tracking prevention
+    if (!token && req.headers.authorization?.startsWith("Bearer ")) {
+      token = req.headers.authorization.substring(7);
+    }
+
     if (!token) {
       throw new UnauthorizedError("Authentication required");
     }

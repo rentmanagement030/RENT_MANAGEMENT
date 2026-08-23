@@ -12,7 +12,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     secure: env.cookieSecure,
     maxAge: env.sessionTtlHours * 60 * 60 * 1000,
   });
-  return ok(res, { user });
+  return ok(res, { token, user });
 });
 
 export const firebaseLogin = asyncHandler(async (req: Request, res: Response) => {
@@ -23,7 +23,7 @@ export const firebaseLogin = asyncHandler(async (req: Request, res: Response) =>
     secure: env.cookieSecure,
     maxAge: env.sessionTtlHours * 60 * 60 * 1000,
   });
-  return ok(res, { user });
+  return ok(res, { token, user });
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {

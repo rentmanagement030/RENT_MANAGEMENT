@@ -81,10 +81,40 @@ function messageWithDetails(base: string, details?: unknown): string {
   return extra ? `${base} — ${extra}` : base;
 }
 
+const AUTH_TOKEN_KEY = "rm_auth_token";
+
+export function getAuthToken(): string | null {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token: string): void {
+  try {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+  } catch {
+    // ignore
+  }
+}
+
+export function clearAuthToken(): void {
+  try {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   if (options.body && typeof options.body === "string") {
     headers.set("Content-Type", "application/json");
+  }
+  const token = getAuthToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
   const res = await fetch(`${BASE}${path}`, {
     ...options,
@@ -93,6 +123,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (res.status === 401) {
+    clearAuthToken();
     const body = await res.json().catch(() => null);
     throw new ApiClientError(401, messageWithDetails(body?.error || "Not authenticated", body?.details), body?.details);
   }
@@ -125,10 +156,19 @@ const qs = (params: Record<string, unknown> | undefined) => {
 export const api = {
   // ---- Auth ----
   login: (email: string, password: string) =>
-    request<{ user: Me }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }).then((r) => r.user),
+    request<{ user: Me; token?: string }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }).then((r) => {
+      if (r.token) setAuthToken(r.token);
+      return r.user;
+    }),
   firebaseLogin: (idToken: string) =>
-    request<{ user: Me }>("/auth/firebase-login", { method: "POST", body: JSON.stringify({ idToken }) }).then((r) => r.user),
-  logout: () => request<{ message: string }>("/auth/logout", { method: "POST" }),
+    request<{ user: Me; token?: string }>("/auth/firebase-login", { method: "POST", body: JSON.stringify({ idToken }) }).then((r) => {
+      if (r.token) setAuthToken(r.token);
+      return r.user;
+    }),
+  logout: () => {
+    clearAuthToken();
+    return request<{ message: string }>("/auth/logout", { method: "POST" });
+  },
   me: () => request<{ user: Me }>("/auth/me").then((r) => r.user),
   sessions: () => request<{ sessions: SessionInfo[] }>("/auth/sessions").then((r) => r.sessions),
   revokeSession: (id: string) => request<{ message: string }>(`/auth/sessions/${id}`, { method: "DELETE" }),
