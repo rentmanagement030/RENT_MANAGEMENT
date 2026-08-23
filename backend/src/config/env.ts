@@ -110,6 +110,9 @@ export const env = {
   whatsappBusinessAccountId:
     process.env.WHATSAPP_BUSINESS_ACCOUNT_ID ?? "",
 
+  whatsappVerifyToken:
+    process.env.WHATSAPP_VERIFY_TOKEN || "c2d_rent_whatsapp_secret_2026",
+
   // ------------------------------------------------------------
   // Email / SMTP
   // ------------------------------------------------------------

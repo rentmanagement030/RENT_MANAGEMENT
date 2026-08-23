@@ -19,6 +19,7 @@ import bookingRoutes from "./booking.routes";
 import staffVendorRoutes from "./staffVendor.routes";
 import guestLeaveRoutes from "./guestLeave.routes";
 import taxRoutes from "./tax.routes";
+import whatsappRoutes from "./whatsapp.routes";
 
 const router = Router();
 
@@ -33,6 +34,7 @@ router.use("/rent", rentRoutes);
 router.use("/bills", billRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/razorpay", razorpayRoutes);
+router.use("/whatsapp", whatsappRoutes);
 router.use("/crm", crmRoutes);
 router.use("/visits", visitRoutes);
 router.use("/bookings", bookingRoutes);
