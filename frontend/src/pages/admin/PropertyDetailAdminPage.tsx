@@ -775,8 +775,8 @@ export default function PropertyDetailAdminPage() {
                       const phone = t.phone || t.contactNumber;
                       const assignedHome =
                         t.home ||
-                        homesList.find((h) => h.id === t.homeId || h.activeTenant?.id === t.id);
-                      const unitBadge = assignedHome
+                        (t.homeId ? homesList.find((h) => h.id === t.homeId) : null) ||
+                        null;
                       const isUnallocated = isMultiUnit && !assignedHome;
                       const unitBadge = assignedHome
                         ? `${assignedHome.homeNumber || assignedHome.name || "Unit"} (${assignedHome.floor || "Floor"})`
