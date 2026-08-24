@@ -232,7 +232,27 @@ export default function PropertyDetailAdminPage() {
     .filter((h) => h.status === "AVAILABLE" && !h.activeTenant)
     .reduce((sum, h) => sum + Number(h.rent || 0), 0);
 
-  const displayMonthlyRent = isMultiUnit && totalHomesCount > 0 ? totalHomesPotentialRent : Number(property.rent || 0);
+  // PG specific calculations
+  const pgTotalBeds = (rooms || []).reduce((sum, r) => sum + (r.beds?.length || r.capacity || 0), 0);
+  const pgPotentialRevenue = (rooms || []).reduce((sum, r) => {
+    if (r.beds && r.beds.length > 0) {
+      return sum + r.beds.reduce((bSum, b) => bSum + Number(b.rent || r.rent || 0), 0);
+    }
+    return sum + (Number(r.rent || 0) * (r.capacity || 1));
+  }, 0);
+
+  const displayMonthlyRent = isMultiUnit && totalHomesCount > 0
+    ? totalHomesPotentialRent
+    : property.type === "PG"
+    ? ((property as any).potentialRevenue || pgPotentialRevenue || Number(property.rent || 0))
+    : Number(property.rent || 0);
+
+  const displayTotalCapacity = isMultiUnit
+    ? totalHomesCount
+    : property.type === "PG"
+    ? (pgTotalBeds || property.roomCounts?.total || property.maxCapacity || 1)
+    : (property.maxCapacity || 1);
+
   const displayTotalDeposit = isMultiUnit && totalHomesCount > 0 ? totalHomesDeposit : Number(property.deposit || 0);
 
   const occupiedHomesCount = Math.max(
@@ -242,13 +262,13 @@ export default function PropertyDetailAdminPage() {
   const availableHomesCount = Math.max(0, totalHomesCount - occupiedHomesCount);
   const maintenanceHomesCount = homesList.filter((h) => h.status === "MAINTENANCE").length;
 
-  const roomTotal = property.roomCounts?.total || 0;
+  const roomTotal = property.roomCounts?.total || pgTotalBeds || 0;
   const occupancyRate = isMultiUnit
     ? totalHomesCount > 0
       ? Math.min(100, Math.round((occupiedHomesCount / totalHomesCount) * 100))
       : 0
     : roomTotal > 0
-    ? Math.round(((property.roomCounts?.occupied || 0) / roomTotal) * 100)
+    ? Math.min(100, Math.round(((property.roomCounts?.occupied ?? activeTenantsList.length) / roomTotal) * 100))
     : activeTenantsList.length > 0
     ? 100
     : 0;
@@ -352,8 +372,10 @@ export default function PropertyDetailAdminPage() {
           {/* Quick Key Performance Indicators */}
           <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-4 text-xs font-extrabold bg-slate-800/80 p-2.5 sm:px-4 sm:py-2.5 rounded-xl border border-slate-700/60 shrink-0 w-full sm:w-auto text-center sm:text-left min-w-0">
             <div className="min-w-0">
-              <span className="text-[10px] text-slate-400 block uppercase font-bold truncate">{isMultiUnit ? "Units" : "Capacity"}</span>
-              <span className="text-sm sm:text-base font-black text-white truncate block">{isMultiUnit ? totalHomesCount : (property.roomCounts?.total || 1)}</span>
+              <span className="text-[10px] text-slate-400 block uppercase font-bold truncate">
+                {isMultiUnit ? "Units" : property.type === "PG" ? "Beds" : "Capacity"}
+              </span>
+              <span className="text-sm sm:text-base font-black text-white truncate block">{displayTotalCapacity}</span>
             </div>
             <div className="hidden sm:block h-6 w-px bg-slate-700" />
             <div className="min-w-0">
@@ -378,7 +400,11 @@ export default function PropertyDetailAdminPage() {
             mobileTab === "units" ? "bg-white text-blue-700 shadow-xs" : "text-slate-600 hover:text-slate-900"
           )}
         >
-          Units ({totalHomesCount})
+          {isMultiUnit
+            ? `Units (${totalHomesCount})`
+            : property.type === "PG"
+            ? `Rooms (${(rooms || []).length})`
+            : `Overview`}
         </button>
         <button
           onClick={() => setMobileTab("financials")}
@@ -515,8 +541,14 @@ export default function PropertyDetailAdminPage() {
                             <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <span className="font-black text-slate-900 text-base">Room {room.roomNumber}</span>
-                                  {room.floor && <Badge variant="secondary" className="font-bold text-[10px]">Floor {room.floor}</Badge>}
+                                  <span className="font-black text-slate-900 text-base">
+                                    {room.roomNumber.toLowerCase().startsWith("room") ? room.roomNumber : `Room ${room.roomNumber}`}
+                                  </span>
+                                  {room.floor && (
+                                    <Badge variant="secondary" className="font-bold text-[10px]">
+                                      {room.floor.toLowerCase().startsWith("floor") ? room.floor : `Floor ${room.floor}`}
+                                    </Badge>
+                                  )}
                                 </div>
                                 <p className="text-xs font-semibold text-slate-500 mt-0.5">
                                   {room.capacity === 1 ? "1 Sharing (Single)" : `${room.capacity} Sharing`} · Rent: <span className="font-extrabold text-blue-600">{formatINR(room.rent || property.rent)}</span>
@@ -1018,7 +1050,9 @@ function BedRow({
   return (
     <div className="flex items-center justify-between rounded-xl bg-slate-50 p-2.5 text-xs font-semibold border border-slate-200 min-w-0">
       <div className="flex items-center gap-2 min-w-0">
-        <span className="font-extrabold text-slate-900 truncate">Bed {bed.bedNumber}</span>
+        <span className="font-extrabold text-slate-900 truncate">
+          {bed.bedNumber.toLowerCase().startsWith("bed") ? bed.bedNumber : `Bed ${bed.bedNumber}`}
+        </span>
         <Badge
           variant={
             isOccupied ? "success" : bed.status === "MAINTENANCE" ? "warning" : "info"

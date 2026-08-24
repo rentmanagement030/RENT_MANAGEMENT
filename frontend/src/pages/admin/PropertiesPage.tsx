@@ -497,10 +497,11 @@ export default function PropertiesPage() {
                   ? "PG / Hostel"
                   : "Single House";
 
+                const pgTotalBeds = p.roomCounts?.total || p.rooms?.reduce((s: number, r: any) => s + (r.beds?.length || r.capacity || 0), 0) || p.maxCapacity || 0;
                 const unitsCount = isMultiUnit
                   ? `${p.homes?.length || 0} Homes`
                   : p.type === "PG"
-                  ? `${p.rooms?.length || p.roomCounts?.total || 0} Beds`
+                  ? `${pgTotalBeds} Beds`
                   : `Cap: ${p.maxCapacity || 1}`;
 
                 const displayRent = (p as any).potentialRevenue
@@ -600,10 +601,11 @@ export default function PropertiesPage() {
                           {itemsToDisplay.map((p) => {
                             const typeLabel = p.type === "HOUSE" ? "Single House" : p.type === "PG" ? "PG Hostel" : p.type === "VILLA" ? "Villa" : p.type === "MULTI_UNIT_HOUSE" ? "Multi-Unit" : "Apartment";
 
+                            const pgTotalBeds = p.roomCounts?.total || p.rooms?.reduce((s: number, r: any) => s + (r.beds?.length || r.capacity || 0), 0) || p.maxCapacity || 0;
                             const unitsCount = p.type === "VILLA" || p.type === "MULTI_UNIT_HOUSE" || p.type === "APARTMENT"
                               ? `${p.homes?.length || 0} Homes`
                               : p.type === "PG"
-                              ? `${p.rooms?.length || 0} Rooms`
+                              ? `${pgTotalBeds} Beds (${p.rooms?.length || 0} Rooms)`
                               : `Cap: ${p.maxCapacity || 1}`;
 
                             const occCountText = p.type === "VILLA" || p.type === "MULTI_UNIT_HOUSE" || p.type === "APARTMENT"
