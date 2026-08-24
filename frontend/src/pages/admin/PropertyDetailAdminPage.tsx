@@ -238,7 +238,8 @@ export default function PropertyDetailAdminPage() {
     <div className="space-y-4 sm:space-y-5 max-w-7xl mx-auto w-full min-w-0 max-w-full pb-20 sm:pb-24 px-0">
       {/* Enterprise Executive Hero Header Card */}
       <div className="bg-slate-900 text-white rounded-2xl p-3.5 sm:p-6 shadow-md border border-slate-800 space-y-3.5 w-full min-w-0 max-w-full box-border">
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex flex-col gap-3">
+          {/* Badges & Navigation */}
           <div className="flex items-center gap-2 flex-wrap min-w-0">
             <Link
               to="/admin/properties"
@@ -253,56 +254,67 @@ export default function PropertyDetailAdminPage() {
             </Badge>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap shrink-0 w-full sm:w-auto justify-start sm:justify-end">
-            {can(PERMISSIONS.TENANTS_MANAGE) && (
-              <Link
-                to={`/admin/tenants?propertyId=${property.id}&action=new`}
-                className="inline-flex items-center justify-center gap-1.5 text-xs font-black bg-white text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-xl shadow-xs h-9 min-h-[36px]"
-              >
-                <UserPlus className="size-3.5" /> Add Tenant
-              </Link>
-            )}
-            {isMultiUnit && can(PERMISSIONS.PROPERTIES_MANAGE) && (
-              <Button
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-xs h-9 min-h-[36px]"
-                onClick={() => setManagingStructure(true)}
-              >
-                <Layers className="size-3.5 mr-1" /> Structure Builder
-              </Button>
-            )}
-            {isMultiUnit && can(PERMISSIONS.PROPERTIES_MANAGE) && (
-              <Button
-                size="sm"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-xs h-9 min-h-[36px]"
-                onClick={() => {
-                  setEditingHome(null);
-                  setAddingHome(true);
-                }}
-              >
-                <Plus className="size-3.5 mr-1" /> Add Home
-              </Button>
-            )}
-            {can(PERMISSIONS.PROPERTIES_MANAGE) && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-slate-800 text-white border-slate-700 hover:bg-slate-700 font-extrabold text-xs h-9 min-h-[36px]"
-                onClick={() => setEditingProperty(true)}
-              >
-                <Pencil className="size-3.5 mr-1" /> Edit
-              </Button>
-            )}
-            {can(PERMISSIONS.PROPERTIES_MANAGE) && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-rose-950/80 text-rose-300 border-rose-800/80 hover:bg-rose-900 hover:text-white font-extrabold text-xs h-9 min-h-[36px]"
-                onClick={() => setDeletingProperty(property)}
-              >
-                <Trash2 className="size-3.5 mr-1 text-rose-400" /> Delete
-              </Button>
-            )}
+          {/* Action Buttons Matrix: Row 1 = 50% each (2 buttons), Row 2 = 33.3% each (3 buttons) */}
+          <div className="space-y-2 w-full">
+            {/* Primary Row: 50% / 50% */}
+            <div className="grid grid-cols-2 gap-2 w-full">
+              {can(PERMISSIONS.TENANTS_MANAGE) && (
+                <Link
+                  to={`/admin/tenants?propertyId=${property.id}&action=new`}
+                  className={cn(
+                    "inline-flex items-center justify-center gap-1.5 text-xs font-black bg-white text-slate-900 hover:bg-slate-100 px-3 py-2 rounded-xl shadow-xs h-9 min-h-[36px] w-full text-center transition-all",
+                    !isMultiUnit && "col-span-2"
+                  )}
+                >
+                  <UserPlus className="size-3.5" /> Add Tenant
+                </Link>
+              )}
+              {isMultiUnit && can(PERMISSIONS.PROPERTIES_MANAGE) && (
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-xs h-9 min-h-[36px] w-full justify-center transition-all"
+                  onClick={() => setManagingStructure(true)}
+                >
+                  <Layers className="size-3.5 mr-1" /> Structure Builder
+                </Button>
+              )}
+            </div>
+
+            {/* Secondary Row: 33.3% / 33.3% / 33.3% */}
+            <div className={cn("grid gap-2 w-full", isMultiUnit ? "grid-cols-3" : "grid-cols-2")}>
+              {isMultiUnit && can(PERMISSIONS.PROPERTIES_MANAGE) && (
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-xs h-9 min-h-[36px] w-full justify-center transition-all"
+                  onClick={() => {
+                    setEditingHome(null);
+                    setAddingHome(true);
+                  }}
+                >
+                  <Plus className="size-3.5 mr-1" /> Add Home
+                </Button>
+              )}
+              {can(PERMISSIONS.PROPERTIES_MANAGE) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-slate-800 text-white border-slate-700 hover:bg-slate-700 font-extrabold text-xs h-9 min-h-[36px] w-full justify-center transition-all"
+                  onClick={() => setEditingProperty(true)}
+                >
+                  <Pencil className="size-3.5 mr-1" /> Edit
+                </Button>
+              )}
+              {can(PERMISSIONS.PROPERTIES_MANAGE) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-rose-950/80 text-rose-300 border-rose-800/80 hover:bg-rose-900 hover:text-white font-extrabold text-xs h-9 min-h-[36px] w-full justify-center transition-all"
+                  onClick={() => setDeletingProperty(property)}
+                >
+                  <Trash2 className="size-3.5 mr-1 text-rose-400" /> Delete
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
