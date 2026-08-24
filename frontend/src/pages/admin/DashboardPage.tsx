@@ -385,8 +385,8 @@ export default function DashboardPage() {
             </div>
           </Card>
 
-          {/* Card 5: Overall Occupancy */}
-          <Card className="border border-slate-200 bg-white p-3.5 rounded-2xl shadow-2xs">
+          {/* Card 5: Overall Occupancy (100% width on mobile) */}
+          <Card className="border border-slate-200 bg-white p-3.5 rounded-2xl shadow-2xs col-span-2 sm:col-span-1">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-extrabold uppercase text-blue-700">Occupancy</span>
               <div className="size-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">

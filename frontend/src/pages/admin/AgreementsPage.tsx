@@ -299,8 +299,8 @@ export default function AgreementsPage() {
           <span className="text-xs font-medium text-slate-500 block">Past agreement term</span>
         </div>
 
-        {/* 5. TERMINATED */}
-        <div className="bg-white rounded-[14px] p-5 border border-slate-200/90 shadow-2xs space-y-1.5">
+        {/* 5. TERMINATED (100% on mobile, 20% on desktop) */}
+        <div className="bg-white rounded-[14px] p-5 border border-slate-200/90 shadow-2xs space-y-1.5 col-span-2 lg:col-span-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 block">Terminated</span>
           {isStatsLoading ? (
             <div className="h-8 w-16 bg-slate-100 animate-pulse rounded-lg"></div>

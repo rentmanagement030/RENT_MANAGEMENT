@@ -194,8 +194,8 @@ export default function ExpensesPage() {
         }
       />
 
-      {/* 2. Financial KPI Summary (4 Compact Cards) */}
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+      {/* 2. Financial KPI Summary (4 Cards - 50% each on mobile) */}
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
         {/* TOTAL ALL-TIME EXPENSES */}
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">ALL-TIME EXPENSES</span>

@@ -523,9 +523,9 @@ export default function TenantsPage() {
         )}
       </div>
 
-      {/* 2. Dynamic KPI Summary Cards (4 Cards: Total, Active, Pending, Inactive) */}
+      {/* 2. Dynamic KPI Summary Cards (4 Cards: Total, Active, Pending, Inactive - 50% each on mobile) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex flex-col justify-between space-y-2 col-span-2 sm:col-span-1">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Total Tenants</span>
             <div className="size-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">

@@ -35,9 +35,10 @@ import {
   Lock,
   Download,
   Check,
+  Home,
 } from "lucide-react";
 import { api, downloadUrl } from "@/lib/api";
-import { formatINR, formatDate } from "@/lib/format";
+import { formatINR, formatDate, formatPropertyType } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -244,15 +245,14 @@ export default function TenantDetailPage() {
               </div>
             )}
 
-            <div className="space-y-1">
+            <div className="space-y-1.5 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{tenant.name}</h2>
                 <StatusBadge status={tenant.status} />
-                {tenant.kycStatus && <KycStatusBadge status={tenant.kycStatus} />}
               </div>
 
-              <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs font-semibold text-slate-600">
-                <a href={`tel:${tenant.phone}`} className="flex items-center gap-1 hover:text-blue-600">
+              <div className="flex flex-wrap items-center gap-y-1.5 gap-x-2.5 text-xs font-semibold text-slate-600">
+                <a href={`tel:${tenant.phone}`} className="flex items-center gap-1 hover:text-blue-600 font-bold">
                   <Phone className="size-3.5 text-slate-400" /> {tenant.phone || "No phone"}
                 </a>
                 {tenant.email && (
@@ -262,6 +262,7 @@ export default function TenantDetailPage() {
                 )}
                 {tenant.property && (
                   <Link to={`/admin/properties/${tenant.property.id}`} className="flex items-center gap-1 font-bold text-blue-600 hover:underline">
+                    <span>·</span>
                     <Building2 className="size-3.5" /> {tenant.property.name}
                     {tenant.room ? ` (Room ${tenant.room.roomNumber})` : ""}
                     {tenant.bed ? ` · Bed ${tenant.bed.bedNumber}` : ""}
@@ -271,14 +272,14 @@ export default function TenantDetailPage() {
             </div>
           </div>
 
-          {/* Quick Contact Actions */}
+          {/* Quick Contact Actions (3 Equal Buttons occupying 33.3% width each in 1 row on mobile) */}
           {tenant.phone && (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-3 gap-2 w-full lg:w-auto lg:flex lg:items-center">
               <a
                 href={`tel:${tenant.phone}`}
-                className="inline-flex h-10 px-4 items-center justify-center gap-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 font-bold text-xs hover:bg-slate-200 transition-all"
+                className="inline-flex h-10 px-2.5 sm:px-4 items-center justify-center gap-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 font-bold text-xs hover:bg-slate-200 transition-all text-center w-full lg:w-auto"
               >
-                <Phone className="size-3.5 text-slate-600" /> Call
+                <Phone className="size-3.5 text-slate-600 shrink-0" /> <span>Call</span>
               </a>
 
               {waUrl && (
@@ -286,9 +287,9 @@ export default function TenantDetailPage() {
                   href={waUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex h-10 px-4 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-white font-extrabold text-xs hover:bg-emerald-700 active:scale-95 transition-all shadow-2xs"
+                  className="inline-flex h-10 px-2.5 sm:px-4 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-white font-extrabold text-xs hover:bg-emerald-700 active:scale-95 transition-all shadow-2xs text-center w-full lg:w-auto"
                 >
-                  <WhatsAppIcon className="size-4" /> WhatsApp
+                  <WhatsAppIcon className="size-4 shrink-0" /> <span>WhatsApp</span>
                 </a>
               )}
 
@@ -297,10 +298,10 @@ export default function TenantDetailPage() {
                   href={portalUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex h-10 px-3.5 items-center justify-center gap-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 font-extrabold text-xs hover:bg-blue-100 transition-all"
+                  className="inline-flex h-10 px-2 sm:px-3.5 items-center justify-center gap-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 font-extrabold text-xs hover:bg-blue-100 transition-all text-center w-full lg:w-auto"
                   title="Send Tenant Portal Credentials via WhatsApp"
                 >
-                  <ExternalLink className="size-3.5 text-blue-600" /> Portal Login
+                  <ExternalLink className="size-3.5 text-blue-600 shrink-0" /> <span className="truncate">Portal Login</span>
                 </a>
               )}
             </div>
@@ -420,19 +421,59 @@ export default function TenantDetailPage() {
                 </div>
 
                 <div className="space-y-1">
+                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Property Category</span>
+                  <p className="font-bold text-slate-800 text-sm">
+                    {formatPropertyType(tenant.property?.type)}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
                   <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">City / Locality</span>
                   <p className="font-bold text-slate-800 text-sm">{tenant.property?.city || "—"}</p>
                 </div>
 
-                <div className="space-y-1">
-                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Room Allocation</span>
-                  <p className="font-bold text-slate-900 text-sm">{tenant.room ? `Room ${tenant.room.roomNumber}` : <span className="text-slate-400 font-medium">Unassigned</span>}</p>
-                </div>
+                {/* Conditional allocation: PG vs Residential House/Villa */}
+                {tenant.property?.type === "PG" || tenant.property?.type === "HOSTEL" ? (
+                  <>
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Room Allocation</span>
+                      <p className="font-bold text-slate-900 text-sm">
+                        {tenant.room ? `Room ${tenant.room.roomNumber}` : <span className="text-slate-400 font-medium">Unassigned</span>}
+                      </p>
+                    </div>
 
-                <div className="space-y-1">
-                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Bed Allocation</span>
-                  <p className="font-bold text-slate-900 text-sm">{tenant.bed ? `Bed ${tenant.bed.bedNumber}` : <span className="text-slate-400 font-medium">Unassigned</span>}</p>
-                </div>
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Bed Allocation</span>
+                      <p className="font-bold text-slate-900 text-sm">
+                        {tenant.bed ? `Bed ${tenant.bed.bedNumber}` : <span className="text-slate-400 font-medium">Unassigned</span>}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Assigned Unit / Home</span>
+                      <p className="font-extrabold text-slate-900 text-sm">
+                        {tenant.home ? (
+                          <span className="text-blue-700 bg-blue-50 px-2.5 py-1 rounded-xl border border-blue-200 inline-flex items-center gap-1.5 font-black">
+                            <Home className="size-3.5 text-blue-600" />
+                            {tenant.home.floor ? `${tenant.home.floor} · ` : ""}
+                            {tenant.home.homeNumber || tenant.home.name || "Home Unit"}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 font-medium">Entire Property</span>
+                        )}
+                      </p>
+                    </div>
+
+                    {tenant.home?.homeType && (
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Unit Configuration</span>
+                        <p className="font-bold text-slate-800 text-sm">{tenant.home.homeType}</p>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 <div className="space-y-1 sm:col-span-2 pt-2 border-t border-slate-100">
                   <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Move-in / Joining Date</span>
@@ -626,17 +667,17 @@ export default function TenantDetailPage() {
 
       {/* TAB 3: TENANT DOCUMENTS */}
       {activeTab === "kyc" && (
-        <Card className="border border-slate-200 bg-white shadow-2xs rounded-2xl">
-          <CardHeader className="flex flex-row items-center justify-between p-4 sm:p-5 border-b border-slate-100">
+        <Card className="border border-slate-200 bg-white shadow-2xs rounded-2xl overflow-hidden">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50">
             <div>
               <CardTitle className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
                 <FileText className="size-5 text-blue-600" /> Tenant Documents
               </CardTitle>
-              <p className="text-xs font-semibold text-slate-500">Securely store documents provided by the tenant.</p>
+              <p className="text-xs font-semibold text-slate-500 mt-0.5">Securely store documents provided by the tenant.</p>
             </div>
             {can(PERMISSIONS.TENANTS_MANAGE) && (
-              <Button size="sm" className="font-extrabold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs" onClick={() => setUploading(true)}>
-                <Upload className="size-4 mr-1" /> Upload Document
+              <Button size="sm" className="font-extrabold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs self-start sm:self-auto shrink-0" onClick={() => setUploading(true)}>
+                <Upload className="size-4 mr-1.5" /> Upload Document
               </Button>
             )}
           </CardHeader>
@@ -1038,34 +1079,34 @@ function DocumentCard({
     .replace(/\b\w/g, (l) => l.toUpperCase());
 
   return (
-    <div className="flex flex-col justify-between p-4 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3">
+    <div className="flex flex-col justify-between p-4 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-2xs space-y-3.5">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100 shrink-0 mt-0.5">
             <FileText className="size-5" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-0.5">
             <p className="font-extrabold text-slate-900 text-sm truncate">{formattedType}</p>
             <p className="text-xs font-semibold text-slate-600 truncate">{doc.originalName || `${formattedType}.pdf`}</p>
-            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+            <p className="text-[11px] text-slate-400 font-medium">
               Uploaded {doc.createdAt ? formatDate(doc.createdAt) : "Recently"}
             </p>
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 shrink-0">
+        <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
           <Check className="size-3.5 text-emerald-600" /> Stored
         </span>
       </div>
 
-      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+      <div className="flex items-center gap-2 pt-3 border-t border-slate-100 w-full">
         <Button
           size="sm"
           variant="outline"
-          className="font-bold text-xs border-slate-300 rounded-xl h-8 px-3"
+          className="flex-1 font-bold text-xs border-slate-300 bg-white hover:bg-slate-50 text-slate-800 rounded-xl h-9 px-3 shadow-2xs justify-center"
           onClick={() => setPreview(true)}
         >
-          <Eye className="size-3.5 mr-1" /> View
+          <Eye className="size-3.5 mr-1.5 text-slate-500" /> View
         </Button>
 
         {doc.downloadUrl && (
@@ -1073,9 +1114,9 @@ function DocumentCard({
             href={downloadUrl(doc.downloadUrl)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-8 px-3 items-center justify-center gap-1 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 font-bold text-xs text-slate-700 transition-colors"
+            className="flex-1 inline-flex h-9 px-3 items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 font-bold text-xs text-slate-800 shadow-2xs transition-all"
           >
-            <Download className="size-3.5" /> Download
+            <Download className="size-3.5 text-slate-500" /> Download
           </a>
         )}
 
@@ -1083,10 +1124,11 @@ function DocumentCard({
           <Button
             size="sm"
             variant="ghost"
-            className="text-slate-400 hover:text-rose-600 rounded-xl h-8 px-2"
+            className="size-9 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl shrink-0 flex items-center justify-center border border-slate-200 hover:border-rose-200 transition-colors"
             onClick={() => setConfirming(true)}
+            title="Delete Document"
           >
-            <Trash2 className="size-3.5" />
+            <Trash2 className="size-4" />
           </Button>
         )}
       </div>
