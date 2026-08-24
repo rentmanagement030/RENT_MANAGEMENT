@@ -8,6 +8,9 @@ import { writeAuditLog } from "../utils/audit";
 import { nanoid } from "nanoid";
 import { signDownloadToken, deleteFile, savePrivate, readStored } from "../utils/storage";
 import { numberMoney } from "../utils/money";
+import { env } from "../config/env";
+import { logger } from "../utils/logger";
+import { sendWhatsAppMessage, agreementSigningBody } from "./whatsapp.service";
 import type { Request } from "express";
 
 const agreementInclude = {
@@ -354,6 +357,17 @@ export async function getAgreement(id: string) {
   return toAgreementView(agreement);
 }
 
+function getClientBaseUrl(req?: Request): string {
+  const origin = req?.headers.origin || (req?.headers.referer ? new URL(req.headers.referer).origin : undefined);
+  if (origin && !origin.includes("localhost") && !origin.includes("127.0.0.1")) {
+    return origin;
+  }
+  if (env.clientUrl && !env.clientUrl.includes("localhost") && !env.clientUrl.includes("127.0.0.1")) {
+    return env.clientUrl;
+  }
+  return origin || env.clientUrl || "https://rent-management-frontend-tawny.vercel.app";
+}
+
 export async function createAgreement(input: AgreementInput, req: Request, actorId: string) {
   const tenant = await prisma.tenant.findUnique({ where: { id: input.tenantId } });
   if (!tenant) throw new NotFoundError("Tenant not found");
@@ -365,11 +379,13 @@ export async function createAgreement(input: AgreementInput, req: Request, actor
   }
 
   const token = `sign_${crypto.randomBytes(32).toString("base64url")}`;
+  const tokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   const agreement = await prisma.agreement.create({
     data: {
       agreementNumber: `AGR-${nanoid(8).toUpperCase()}`,
       token,
+      tokenExpiresAt,
       tenantId: input.tenantId,
       propertyId: input.propertyId,
       startDate: input.startDate,
@@ -381,16 +397,38 @@ export async function createAgreement(input: AgreementInput, req: Request, actor
       documentName: input.documentName ?? null,
       documentMimeType: input.documentMimeType ?? null,
       documentSize: input.documentSize ?? null,
-      status: input.status ?? "ACTIVE",
+      status: input.status ?? "SENT",
+      sentAt: new Date(),
       createdById: actorId,
     },
+    include: agreementInclude,
   });
+
+  // Construct full signing link
+  const baseUrl = getClientBaseUrl(req);
+  const fullSignUrl = `${baseUrl.replace(/\/$/, "")}/agreements/sign/${token}`;
+
+  // Automatically send digital signature invitation via WhatsApp API
+  if (tenant.phone) {
+    const rentAmount = `₹${Number(agreement.rent).toLocaleString("en-IN")}`;
+    const msg = agreementSigningBody({
+      tenantName: tenant.name,
+      propertyName: property.name,
+      agreementNumber: agreement.agreementNumber,
+      signUrl: fullSignUrl,
+      rentAmount,
+      expiresDays: 7,
+    });
+    await sendWhatsAppMessage(tenant.phone, msg).catch((err) => {
+      logger.error("Failed to automatically dispatch WhatsApp agreement signing link on creation", { err, phone: tenant.phone });
+    });
+  }
 
   await writeAuditLog(req, {
     action: "agreement.created",
     entityType: "agreement",
     entityId: agreement.id,
-    metadata: { agreementNumber: agreement.agreementNumber },
+    metadata: { agreementNumber: agreement.agreementNumber, autoSentWhatsApp: true, signUrl: fullSignUrl },
   }, actorId);
 
   return toAgreementView(agreement);
@@ -440,7 +478,13 @@ export async function updateAgreement(
 }
 
 export async function sendAgreementForSigning(id: string, expiresDays = 7, req?: Request, actorId?: string) {
-  const existing = await prisma.agreement.findUnique({ where: { id }, include: agreementInclude });
+  const existing = await prisma.agreement.findUnique({
+    where: { id },
+    include: {
+      tenant: true,
+      property: true,
+    },
+  });
   if (!existing) throw new NotFoundError("Agreement not found");
 
   // Cryptographically secure signing token (256 bits of randomness).
@@ -459,12 +503,31 @@ export async function sendAgreementForSigning(id: string, expiresDays = 7, req?:
     include: agreementInclude,
   });
 
+  const baseUrl = getClientBaseUrl(req);
+  const fullSignUrl = `${baseUrl.replace(/\/$/, "")}/agreements/sign/${token}`;
+
+  // Automatically dispatch WhatsApp notification to the tenant
+  if (existing.tenant?.phone) {
+    const rentAmount = `₹${Number(existing.rent).toLocaleString("en-IN")}`;
+    const msg = agreementSigningBody({
+      tenantName: existing.tenant.name,
+      propertyName: existing.property?.name || "Rental Property",
+      agreementNumber: agreement.agreementNumber || id.slice(-6).toUpperCase(),
+      signUrl: fullSignUrl,
+      rentAmount,
+      expiresDays,
+    });
+    await sendWhatsAppMessage(existing.tenant.phone, msg).catch((err) => {
+      logger.error("Failed to dispatch WhatsApp agreement signing link", { err, phone: existing.tenant?.phone });
+    });
+  }
+
   if (req) {
     await writeAuditLog(req, {
       action: "agreement.sent_for_signing",
       entityType: "agreement",
       entityId: id,
-      metadata: { agreementNumber: agreement.agreementNumber, tokenExpiresAt },
+      metadata: { agreementNumber: agreement.agreementNumber, tokenExpiresAt, signUrl: fullSignUrl },
     }, actorId);
   }
 
@@ -472,6 +535,7 @@ export async function sendAgreementForSigning(id: string, expiresDays = 7, req?:
     agreement: toAgreementView(agreement),
     token,
     signUrl: `/agreements/sign/${token}`,
+    fullSignUrl,
   };
 }
 

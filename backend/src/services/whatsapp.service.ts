@@ -115,3 +115,27 @@ export function paymentConfirmationBody(opts: {
     `- ${env.nodeEnv === "production" ? "Rental Management" : "C2D Tech Rentals"}`,
   ].join("\n");
 }
+
+export function agreementSigningBody(opts: {
+  tenantName: string;
+  propertyName: string;
+  agreementNumber: string;
+  signUrl: string;
+  rentAmount: string;
+  expiresDays?: number;
+}): string {
+  return [
+    `Dear ${opts.tenantName},`,
+    ``,
+    `Your Rental Agreement (${opts.agreementNumber}) for ${opts.propertyName} has been prepared and is ready for your digital signature.`,
+    ``,
+    `Monthly Rent: ${opts.rentAmount}`,
+    ``,
+    `Please review and sign your lease agreement using the secure link below:`,
+    `${opts.signUrl}`,
+    ``,
+    `This signing link will remain active for ${opts.expiresDays || 7} days.`,
+    ``,
+    `- C2D Rentals Management`,
+  ].join("\n");
+}
