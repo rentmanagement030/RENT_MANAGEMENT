@@ -32,16 +32,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      const redirectRes = await getRedirectResult(auth).catch(() => null);
-      if (redirectRes?.user) {
-        const idToken = await redirectRes.user.getIdToken();
-        const me = await api.firebaseLogin(idToken);
-        setUser(me);
-        return;
-      }
+      // 1. Immediately verify C2D session via backend API (fast local/cached check)
       const me = await api.me();
       setUser(me);
     } catch {
+      // 2. If not authenticated, check if returning from a Firebase OAuth redirect
+      try {
+        const redirectRes = await getRedirectResult(auth).catch(() => null);
+        if (redirectRes?.user) {
+          const idToken = await redirectRes.user.getIdToken();
+          const me = await api.firebaseLogin(idToken);
+          setUser(me);
+          return;
+        }
+      } catch {
+        // ignore
+      }
       setUser(null);
     } finally {
       setLoading(false);
