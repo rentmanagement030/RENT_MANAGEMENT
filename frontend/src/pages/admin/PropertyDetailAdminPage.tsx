@@ -92,16 +92,20 @@ export default function PropertyDetailAdminPage() {
   const [addingBedsFor, setAddingBedsFor] = useState<PgRoom | null>(null);
   const [selectedHomeId, setSelectedHomeId] = useState<string | null>(null);
 
-  const { data: property, isLoading } = useQuery({
+  const { data: property, isLoading, refetch } = useQuery({
     queryKey: ["property", id],
     queryFn: () => api.getProperty(id!),
     enabled: !!id,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const { data: rooms } = useQuery({
     queryKey: ["property-rooms", id],
     queryFn: () => api.listRooms(id!),
     enabled: !!id && property?.type === "PG",
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const invalidate = () => {
