@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, FileText, Maximize, Minimize, Printer, X, ZoomIn, ZoomOut } from "lucide-react";
+import { AlertCircle, Download, FileText, Loader2, Maximize, Minimize, Printer, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/primitives";
 import { downloadUrl } from "@/lib/api";
 
@@ -21,6 +21,9 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
 
   const [zoom, setZoom] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -37,6 +40,45 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
       document.body.style.overflow = prev;
     };
   }, [open, onClose]);
+
+  // Load PDF as blob URL for 100% iframe compatibility across origins
+  useEffect(() => {
+    if (!open || !resolvedUrl || !isPdf) {
+      setBlobUrl(null);
+      setLoading(false);
+      setLoadError(null);
+      return;
+    }
+
+    let active = true;
+    let objectUrl: string | null = null;
+    setLoading(true);
+    setLoadError(null);
+
+    fetch(resolvedUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        if (!active) return;
+        const pdfBlob = new Blob([blob], { type: blob.type || "application/pdf" });
+        objectUrl = URL.createObjectURL(pdfBlob);
+        setBlobUrl(objectUrl);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setLoadError(err instanceof Error ? err.message : "Failed to load document");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [open, resolvedUrl, isPdf]);
 
   if (!open) return null;
 
@@ -58,11 +100,13 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
         win.print();
         return;
       } catch {
-        /* same-origin fallback */
+        /* fallback */
       }
     }
     window.print();
   };
+
+  const activeDocUrl = blobUrl || resolvedUrl;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-slate-900/95 backdrop-blur-md" role="dialog" aria-modal="true" aria-label={name}>
@@ -147,13 +191,39 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
             onClick={(e) => e.stopPropagation()}
           />
         ) : isPdf ? (
-          <iframe
-            ref={iframeRef}
-            src={resolvedUrl}
-            title={name}
-            className="h-full w-full max-w-5xl rounded-xl border border-slate-700/80 bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
+          loading ? (
+            <div className="flex flex-col items-center justify-center gap-3 text-slate-300" onClick={(e) => e.stopPropagation()}>
+              <Loader2 className="size-8 animate-spin text-blue-400" />
+              <p className="text-xs font-bold">Loading PDF document...</p>
+            </div>
+          ) : loadError ? (
+            <div className="flex flex-col items-center gap-3.5 p-8 text-center text-slate-200 max-w-md" onClick={(e) => e.stopPropagation()}>
+              <div className="flex size-16 items-center justify-center rounded-2xl bg-rose-950/80 text-rose-400 border border-rose-800">
+                <AlertCircle className="size-8" />
+              </div>
+              <div>
+                <p className="text-base font-extrabold text-white">{name}</p>
+                <p className="mt-1 text-xs font-medium text-rose-300">{loadError}</p>
+              </div>
+              <a
+                href={resolvedUrl}
+                download={name}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors"
+              >
+                <Download className="size-4" /> Download PDF Directly
+              </a>
+            </div>
+          ) : (
+            <iframe
+              ref={iframeRef}
+              src={activeDocUrl}
+              title={name}
+              className="h-full w-full max-w-5xl rounded-xl border border-slate-700/80 bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )
         ) : (
           <div className="flex flex-col items-center gap-3.5 p-8 text-center text-slate-200" onClick={(e) => e.stopPropagation()}>
             <div className="flex size-16 items-center justify-center rounded-2xl bg-slate-800 text-blue-400 border border-slate-700">

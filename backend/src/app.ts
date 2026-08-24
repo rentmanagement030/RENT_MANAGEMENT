@@ -25,6 +25,7 @@ export function createApp(): Express {
   app.use(
     helmet({
       contentSecurityPolicy: false,
+      frameguard: false,
 
       // Needed for frontend/backend running on different
       // localhost ports during development.
