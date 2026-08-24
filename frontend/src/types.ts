@@ -256,6 +256,7 @@ export interface Tenant {
   emergencyName: string | null;
   emergencyPhone: string | null;
   propertyId: string | null;
+  homeId?: string | null;
   roomId: string | null;
   bedId?: string | null;
   rent: string;
@@ -267,6 +268,7 @@ export interface Tenant {
   notes: string | null;
   createdAt: string;
   property?: { id: string; name: string; type: string; city: string } | null;
+  home?: { id: string; homeNumber?: string | null; floor?: string | null; homeType?: string | null; name?: string | null } | null;
   room?: { id: string; roomNumber: string; floor: string | null; capacity?: number | null } | null;
   bed?: { id: string; bedNumber: string } | null;
   documents?: TenantDocument[];
