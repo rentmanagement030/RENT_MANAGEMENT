@@ -45,7 +45,23 @@ const propertyInclude = {
     },
     orderBy: [{ floor: "asc" }, { homeNumber: "asc" }],
   },
-  tenants: { where: { status: "ACTIVE" }, select: { id: true, name: true, phone: true } },
+  tenants: {
+    where: { status: "ACTIVE" },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      email: true,
+      rent: true,
+      joiningDate: true,
+      homeId: true,
+      home: { select: { id: true, floor: true, homeNumber: true, homeType: true } },
+      roomId: true,
+      room: { select: { id: true, floor: true, roomNumber: true } },
+      bed: { select: { id: true, bedNumber: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  },
 } satisfies Prisma.PropertyInclude;
 
 import { serializeAdminProperty } from "../utils/serializers";
@@ -534,9 +550,13 @@ export async function autoSetRoomStatus(roomId: string, tx: Prisma.TransactionCl
 export async function autoSetPropertyStatus(propertyId: string, tx: Prisma.TransactionClient = prisma) {
   const property = await tx.property.findUnique({
     where: { id: propertyId },
-    include: { rooms: { where: { archived: false } } },
+    include: {
+      rooms: { where: { archived: false } },
+      homes: { where: { archived: false } },
+    },
   });
   if (!property) return;
+
   if (property.type === "HOUSE") {
     const activeTenants = await tx.tenant.count({
       where: { propertyId, status: "ACTIVE" },
@@ -545,11 +565,25 @@ export async function autoSetPropertyStatus(propertyId: string, tx: Prisma.Trans
     await tx.property.update({ where: { id: propertyId }, data: { status } });
     return status;
   }
+
+  if (property.type === "VILLA" || property.type === "MULTI_UNIT_HOUSE" || property.type === "APARTMENT" || property.homes.length > 0) {
+    const totalHomes = property.homes.length;
+    const occupiedHomes = property.homes.filter((h) => h.status === "OCCUPIED").length;
+    let status: PropertyStatus = "AVAILABLE";
+    if (totalHomes > 0 && occupiedHomes === totalHomes) {
+      status = "OCCUPIED";
+    } else {
+      status = "AVAILABLE";
+    }
+    await tx.property.update({ where: { id: propertyId }, data: { status } });
+    return status;
+  }
+
   const beds = await tx.pgBed.count({ where: { room: { propertyId }, archived: false, status: "OCCUPIED" } });
   const totalBeds = await tx.pgBed.count({ where: { room: { propertyId }, archived: false } });
   let status: PropertyStatus = "AVAILABLE";
   if (beds === 0) status = "AVAILABLE";
-  else if (beds === totalBeds) status = "OCCUPIED";
+  else if (beds === totalBeds && totalBeds > 0) status = "OCCUPIED";
   else status = "AVAILABLE";
   await tx.property.update({ where: { id: propertyId }, data: { status } });
   return status;

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Building2,
   Calendar,
@@ -26,6 +27,7 @@ interface HomeDetailPageProps {
 }
 
 export function HomeDetailPage({ homeId, isOpen, onClose, onRefresh }: HomeDetailPageProps) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [home, setHome] = useState<PropertyHome | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "tenant" | "financials" | "taxes" | "activity">("overview");
@@ -42,6 +44,42 @@ export function HomeDetailPage({ homeId, isOpen, onClose, onRefresh }: HomeDetai
       .catch((err) => console.error("Failed to load home details", err))
       .finally(() => setLoading(false));
   }, [homeId, isOpen]);
+
+  const handleRecordRent = () => {
+    if (!home) return;
+    onClose();
+    if (home.activeTenant) {
+      navigate(`/admin/payments?tenantId=${home.activeTenant.id}&action=new`);
+    } else {
+      navigate(`/admin/payments?propertyId=${home.propertyId}&homeId=${home.id}&action=new`);
+    }
+  };
+
+  const handleViewAgreement = () => {
+    if (!home) return;
+    onClose();
+    if (home.activeTenant) {
+      navigate(`/admin/agreements?tenantId=${home.activeTenant.id}`);
+    } else {
+      navigate(`/admin/agreements?propertyId=${home.propertyId}&homeId=${home.id}&action=new`);
+    }
+  };
+
+  const handleRecordTax = () => {
+    if (!home) return;
+    onClose();
+    navigate(`/admin/property-taxes?propertyId=${home.propertyId}&homeId=${home.id}&action=new`);
+  };
+
+  const handleTransferTenant = () => {
+    if (!home) return;
+    onClose();
+    if (home.activeTenant) {
+      navigate(`/admin/tenants/${home.activeTenant.id}`);
+    } else {
+      navigate(`/admin/tenants?propertyId=${home.propertyId}&homeId=${home.id}&action=new`);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -90,16 +128,32 @@ export function HomeDetailPage({ homeId, isOpen, onClose, onRefresh }: HomeDetai
 
           {/* Quick Action Bar */}
           <div className="flex flex-wrap gap-2 pt-1">
-            <button className="flex-1 py-1.5 px-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded font-semibold text-[11px] inline-flex items-center justify-center gap-1">
+            <button
+              type="button"
+              onClick={handleRecordRent}
+              className="flex-1 py-1.5 px-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded font-semibold text-[11px] inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+            >
               <CreditCard className="w-3.5 h-3.5" /> Record Rent
             </button>
-            <button className="flex-1 py-1.5 px-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded font-semibold text-[11px] inline-flex items-center justify-center gap-1">
+            <button
+              type="button"
+              onClick={handleViewAgreement}
+              className="flex-1 py-1.5 px-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded font-semibold text-[11px] inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+            >
               <FileCheck className="w-3.5 h-3.5" /> View Agreement
             </button>
-            <button className="flex-1 py-1.5 px-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded font-semibold text-[11px] inline-flex items-center justify-center gap-1">
+            <button
+              type="button"
+              onClick={handleRecordTax}
+              className="flex-1 py-1.5 px-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded font-semibold text-[11px] inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+            >
               <Receipt className="w-3.5 h-3.5" /> Record Tax
             </button>
-            <button className="flex-1 py-1.5 px-2 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded font-semibold text-[11px] inline-flex items-center justify-center gap-1">
+            <button
+              type="button"
+              onClick={handleTransferTenant}
+              className="flex-1 py-1.5 px-2 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded font-semibold text-[11px] inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+            >
               <ArrowLeftRight className="w-3.5 h-3.5" /> Transfer Tenant
             </button>
           </div>

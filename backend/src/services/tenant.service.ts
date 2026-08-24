@@ -9,6 +9,7 @@ import type { Request } from "express";
 
 const tenantInclude = {
   property: { select: { id: true, name: true, number: true, type: true, city: true } },
+  home: { select: { id: true, homeNumber: true, floor: true, homeType: true } },
   room: { select: { id: true, roomNumber: true, floor: true, capacity: true } },
   bed: { select: { id: true, bedNumber: true } },
   documents: { orderBy: { createdAt: "desc" } },
@@ -24,6 +25,7 @@ export interface TenantInput {
   emergencyName?: string;
   emergencyPhone?: string;
   propertyId?: string;
+  homeId?: string;
   roomId?: string;
   bedId?: string;
   rent: number;
@@ -194,6 +196,7 @@ export async function createTenant(input: TenantInput, req: Request, actorId: st
       await validatePropertyCapacity(tx, input.propertyId);
     }
     if (input.propertyId) data.property = { connect: { id: input.propertyId } };
+    if (input.homeId) data.home = { connect: { id: input.homeId } };
     if (input.roomId) data.room = { connect: { id: input.roomId } };
     if (input.bedId) {
       const bed = await tx.pgBed.findUnique({ where: { id: input.bedId } });
@@ -205,6 +208,9 @@ export async function createTenant(input: TenantInput, req: Request, actorId: st
     const created = await tx.tenant.create({ data });
     if (input.bedId) {
       await tx.pgBed.update({ where: { id: input.bedId }, data: { tenantId: created.id, status: "OCCUPIED" } });
+    }
+    if (input.homeId) {
+      await tx.propertyHome.update({ where: { id: input.homeId }, data: { status: "OCCUPIED" } });
     }
     if (input.roomId) await autoSetRoomStatus(input.roomId, tx);
     if (input.propertyId) await autoSetPropertyStatus(input.propertyId, tx);
@@ -257,25 +263,73 @@ export async function updateTenant(
   };
 
   if (input.propertyId) data.property = { connect: { id: input.propertyId } };
-  if (input.roomId) data.room = { connect: { id: input.roomId } };
-  if (input.bedId) {
-    data.bed = { connect: { id: input.bedId } };
+  if (input.homeId !== undefined) {
+    if (input.homeId) {
+      data.home = { connect: { id: input.homeId } };
+    } else {
+      data.home = { disconnect: true };
+    }
+  }
+  if (input.roomId !== undefined) {
+    if (input.roomId) {
+      data.room = { connect: { id: input.roomId } };
+    } else {
+      data.room = { disconnect: true };
+    }
+  }
+  if (input.bedId !== undefined) {
+    if (input.bedId) {
+      data.bed = { connect: { id: input.bedId } };
+    } else {
+      data.bed = { disconnect: true };
+    }
   }
 
-  const updated = await prisma.tenant.update({ where: { id }, data });
+  const updated = await prisma.$transaction(async (tx) => {
+    const res = await tx.tenant.update({ where: { id }, data });
 
-  if (input.bedId) {
-    await prisma.$transaction([
-      prisma.pgBed.updateMany({ where: { tenantId: id }, data: { tenantId: null, status: "AVAILABLE" } }),
-      prisma.pgBed.update({ where: { id: input.bedId }, data: { tenantId: id, status: "OCCUPIED" } }),
-    ]);
-  }
+    // Bed updates
+    if (input.bedId !== undefined) {
+      await tx.pgBed.updateMany({ where: { tenantId: id }, data: { tenantId: null, status: "AVAILABLE" } });
+      if (input.bedId) {
+        await tx.pgBed.update({ where: { id: input.bedId }, data: { tenantId: id, status: "OCCUPIED" } });
+      }
+    }
 
-  if (input.status && input.status !== "ACTIVE") {
-    await prisma.pgBed.updateMany({ where: { tenantId: id }, data: { tenantId: null, status: "AVAILABLE" } });
-    if (input.roomId) await autoSetRoomStatus(input.roomId);
-    if (input.propertyId) await autoSetPropertyStatus(input.propertyId);
-  }
+    // Home updates
+    if (input.homeId !== undefined) {
+      if (tenant.homeId && tenant.homeId !== input.homeId) {
+        const otherActive = await tx.tenant.count({
+          where: { homeId: tenant.homeId, id: { not: id }, status: "ACTIVE" },
+        });
+        if (otherActive === 0) {
+          await tx.propertyHome.update({ where: { id: tenant.homeId }, data: { status: "AVAILABLE" } });
+        }
+      }
+      if (input.homeId) {
+        await tx.propertyHome.update({ where: { id: input.homeId }, data: { status: "OCCUPIED" } });
+      }
+    }
+
+    // Inactive status release
+    if (input.status && input.status !== "ACTIVE") {
+      await tx.pgBed.updateMany({ where: { tenantId: id }, data: { tenantId: null, status: "AVAILABLE" } });
+      const currentHomeId = input.homeId || tenant.homeId;
+      if (currentHomeId) {
+        const otherActive = await tx.tenant.count({
+          where: { homeId: currentHomeId, id: { not: id }, status: "ACTIVE" },
+        });
+        if (otherActive === 0) {
+          await tx.propertyHome.update({ where: { id: currentHomeId }, data: { status: "AVAILABLE" } });
+        }
+      }
+    }
+
+    if (input.roomId || tenant.roomId) await autoSetRoomStatus(input.roomId || tenant.roomId!, tx);
+    if (targetPropertyId) await autoSetPropertyStatus(targetPropertyId, tx);
+
+    return res;
+  });
 
   await writeAuditLog(req, {
     action: "tenant.updated",
@@ -527,6 +581,7 @@ export async function verifyTenantDocument(
 
 export interface TenantTransferInput {
   toPropertyId: string;
+  toHomeId?: string | null;
   toRoomId?: string | null;
   toBedId?: string | null;
   toRent: number;
@@ -549,7 +604,7 @@ export async function transferTenant(
   const result = await prisma.$transaction(async (tx) => {
     const tenant = await tx.tenant.findUnique({
       where: { id: tenantId },
-      include: { property: true, room: true, bed: true },
+      include: { property: true, room: true, bed: true, home: true },
     });
     if (!tenant) throw new NotFoundError("Tenant not found");
     if (!tenant.propertyId) {
@@ -572,9 +627,16 @@ export async function transferTenant(
       }
     }
 
-    // 3. Validate target room/bed and availability
+    // 3. Validate target room/bed/home and availability
     let targetRoomId: string | null = null;
     let targetBedId: string | null = null;
+    let targetHomeId: string | null = null;
+
+    if (input.toHomeId) {
+      const targetHome = await tx.propertyHome.findUnique({ where: { id: input.toHomeId } });
+      if (!targetHome) throw new NotFoundError("Target home not found");
+      targetHomeId = targetHome.id;
+    }
 
     if (input.toBedId) {
       const targetBed = await tx.pgBed.findUnique({
@@ -593,11 +655,11 @@ export async function transferTenant(
     }
 
     const currentBedId = tenant.bed?.id;
+    const currentHomeId = tenant.homeId;
     const oldRoomId = tenant.roomId;
     const oldPropertyId = tenant.propertyId;
 
     // 4. Transfer history: close the current open stay and create the new one.
-    //    Historical transfer records are never overwritten.
     await tx.tenantTransferHistory.updateMany({
       where: { tenantId, effectiveTo: null },
       data: { effectiveTo: tDate },
@@ -609,10 +671,12 @@ export async function transferTenant(
         fromPropertyId: oldPropertyId,
         fromRoomId: oldRoomId,
         fromBedId: currentBedId || null,
+        fromHomeId: currentHomeId || null,
         fromRent: tenant.rent,
         toPropertyId: targetProperty.id,
         toRoomId: targetRoomId,
         toBedId: targetBedId,
+        toHomeId: targetHomeId,
         toRent: new Prisma.Decimal(input.toRent),
         effectiveFrom: tDate,
         effectiveTo: null,
@@ -622,19 +686,33 @@ export async function transferTenant(
       },
     });
 
-    // 5. Free the previous bed
+    // 5. Free the previous bed and home
     if (currentBedId && currentBedId !== targetBedId) {
       await tx.pgBed.update({
         where: { id: currentBedId },
         data: { status: "AVAILABLE", tenantId: null },
       });
     }
+    if (currentHomeId && currentHomeId !== targetHomeId) {
+      const otherActive = await tx.tenant.count({
+        where: { homeId: currentHomeId, id: { not: tenantId }, status: "ACTIVE" },
+      });
+      if (otherActive === 0) {
+        await tx.propertyHome.update({ where: { id: currentHomeId }, data: { status: "AVAILABLE" } });
+      }
+    }
 
-    // 6. Occupy the new bed
+    // 6. Occupy the new bed and home
     if (targetBedId) {
       await tx.pgBed.update({
         where: { id: targetBedId },
         data: { status: "OCCUPIED", tenantId },
+      });
+    }
+    if (targetHomeId) {
+      await tx.propertyHome.update({
+        where: { id: targetHomeId },
+        data: { status: "OCCUPIED" },
       });
     }
 
@@ -643,10 +721,11 @@ export async function transferTenant(
       where: { id: tenantId },
       data: {
         propertyId: targetProperty.id,
+        homeId: targetHomeId,
         roomId: targetRoomId,
         rent: new Prisma.Decimal(input.toRent),
       },
-      include: { property: true, room: true, bed: true },
+      include: { property: true, room: true, bed: true, home: true },
     });
 
     // 9. Recompute room/property statuses for both the source and target

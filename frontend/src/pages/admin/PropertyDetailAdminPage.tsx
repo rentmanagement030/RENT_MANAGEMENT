@@ -193,7 +193,19 @@ export default function PropertyDetailAdminPage() {
     ? "PG / Hostel"
     : "Single House";
 
-  const homesList: PropertyHome[] = property.homes || [];
+  const homesList: PropertyHome[] = (property.homes || []).map((h: any) => {
+    const activeTenant =
+      (property.tenants || []).find((t: any) => t.homeId === h.id || t.home?.id === h.id) ||
+      (Array.isArray(h.tenants) && h.tenants.length > 0 ? h.tenants[0] : null) ||
+      h.activeTenant ||
+      null;
+    const isOccupied = h.status === "OCCUPIED" || Boolean(activeTenant);
+    return {
+      ...h,
+      status: isOccupied ? "OCCUPIED" : h.status,
+      activeTenant,
+    };
+  });
   const totalHomesCount = homesList.length;
 
   // Rent & Deposit calculations for homes
@@ -242,29 +254,27 @@ export default function PropertyDetailAdminPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap shrink-0 w-full sm:w-auto justify-start sm:justify-end">
-            {can(PERMISSIONS.PROPERTIES_MANAGE) && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-slate-800 text-white border-slate-700 hover:bg-slate-700 font-extrabold text-xs flex-1 sm:flex-none h-9"
-                onClick={() => setEditingProperty(true)}
+            {can(PERMISSIONS.TENANTS_MANAGE) && (
+              <Link
+                to={`/admin/tenants?propertyId=${property.id}&action=new`}
+                className="inline-flex items-center justify-center gap-1.5 text-xs font-black bg-white text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-xl shadow-xs h-9 min-h-[36px]"
               >
-                <Pencil className="size-3.5 mr-1" /> Edit Property
-              </Button>
+                <UserPlus className="size-3.5" /> Add Tenant
+              </Link>
             )}
             {isMultiUnit && can(PERMISSIONS.PROPERTIES_MANAGE) && (
               <Button
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-xs flex-1 sm:flex-none h-9"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-xs h-9 min-h-[36px]"
                 onClick={() => setManagingStructure(true)}
               >
-                <Layers className="size-3.5 mr-1" /> Building Structure Builder
+                <Layers className="size-3.5 mr-1" /> Structure Builder
               </Button>
             )}
             {isMultiUnit && can(PERMISSIONS.PROPERTIES_MANAGE) && (
               <Button
                 size="sm"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-xs flex-1 sm:flex-none h-9"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-xs h-9 min-h-[36px]"
                 onClick={() => {
                   setEditingHome(null);
                   setAddingHome(true);
@@ -273,22 +283,24 @@ export default function PropertyDetailAdminPage() {
                 <Plus className="size-3.5 mr-1" /> Add Home
               </Button>
             )}
-            {can(PERMISSIONS.TENANTS_MANAGE) && (
-              <Link
-                to={`/admin/tenants?propertyId=${property.id}&action=new`}
-                className="inline-flex items-center justify-center gap-1 text-xs font-black bg-white text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-xl shadow-xs flex-1 sm:flex-none h-9"
+            {can(PERMISSIONS.PROPERTIES_MANAGE) && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-slate-800 text-white border-slate-700 hover:bg-slate-700 font-extrabold text-xs h-9 min-h-[36px]"
+                onClick={() => setEditingProperty(true)}
               >
-                <UserPlus className="size-3.5" /> Add Tenant
-              </Link>
+                <Pencil className="size-3.5 mr-1" /> Edit
+              </Button>
             )}
             {can(PERMISSIONS.PROPERTIES_MANAGE) && (
               <Button
                 size="sm"
                 variant="outline"
-                className="bg-rose-950/80 text-rose-300 border-rose-800/80 hover:bg-rose-900 hover:text-white font-extrabold text-xs flex-1 sm:flex-none h-9"
+                className="bg-rose-950/80 text-rose-300 border-rose-800/80 hover:bg-rose-900 hover:text-white font-extrabold text-xs h-9 min-h-[36px]"
                 onClick={() => setDeletingProperty(property)}
               >
-                <Trash2 className="size-3.5 mr-1 text-rose-400" /> Delete Property
+                <Trash2 className="size-3.5 mr-1 text-rose-400" /> Delete
               </Button>
             )}
           </div>
@@ -390,26 +402,26 @@ export default function PropertyDetailAdminPage() {
           {isMultiUnit && (
             <div className={cn(mobileTab !== "units" ? "hidden lg:block" : "block")}>
               <Card className="shadow-xs bg-white border-slate-200 rounded-2xl w-full min-w-0 box-border">
-                <CardHeader className="flex-row items-center justify-between space-y-0 pb-3 border-b border-slate-100">
-                  <div>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                  <div className="min-w-0">
                     <CardTitle className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-                      <Building2 className="size-5 text-blue-600" /> Floors & Homes Breakdown
+                      <Building2 className="size-5 text-blue-600 shrink-0" /> Floors & Homes Breakdown
                     </CardTitle>
                     <p className="text-xs font-semibold text-slate-500">Floor-grouped independent units, rent terms, and occupants</p>
                   </div>
                   {can(PERMISSIONS.PROPERTIES_MANAGE) && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap shrink-0">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="font-bold text-xs border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
+                        className="font-bold text-xs border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 h-9"
                         onClick={() => setManagingStructure(true)}
                       >
                         <Layers className="size-3.5 text-blue-600" /> Structure Builder
                       </Button>
                       <Button
                         size="sm"
-                        className="font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                        className="font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-xs h-9"
                         onClick={() => {
                           setEditingHome(null);
                           setAddingHome(true);
@@ -708,16 +720,29 @@ export default function PropertyDetailAdminPage() {
                   <ul className="divide-y divide-slate-100">
                     {property.tenants.map((t: any) => {
                       const phone = t.phone || t.contactNumber;
+                      const unitBadge = t.home
+                        ? `${t.home.homeNumber} (${t.home.floor || "Home"})`
+                        : t.room
+                        ? `Room ${t.room.roomNumber}${t.bed ? ` / Bed ${t.bed.bedNumber}` : ""}`
+                        : property.type === "HOUSE"
+                        ? "Entire House"
+                        : "Allocated Resident";
+
                       return (
                         <li key={t.id} className="p-3 sm:p-3.5 flex items-center justify-between gap-2 hover:bg-slate-50/60 transition-colors min-w-0">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-200/80 font-black text-xs">
                               {t.name.charAt(0).toUpperCase()}
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <Link to={`/admin/tenants/${t.id}`} className="font-extrabold text-xs text-slate-900 hover:text-blue-600 truncate block">
-                                {t.name}
-                              </Link>
+                            <div className="min-w-0 flex-1 space-y-0.5">
+                              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                                <Link to={`/admin/tenants/${t.id}`} className="font-extrabold text-xs text-slate-900 hover:text-blue-600 truncate">
+                                  {t.name}
+                                </Link>
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/70 text-[10px] font-bold shrink-0">
+                                  {unitBadge}
+                                </span>
+                              </div>
                               {phone && <p className="text-[11px] font-semibold text-slate-500 truncate">{phone}</p>}
                             </div>
                           </div>
