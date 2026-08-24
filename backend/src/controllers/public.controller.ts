@@ -44,6 +44,15 @@ export const signAgreement = asyncHandler(async (req: Request, res: Response) =>
   return ok(res, { agreement });
 });
 
+export const getSignedAgreementPdf = asyncHandler(async (req: Request, res: Response) => {
+  const { getAgreementSignedPdfFileByToken } = await import("../services/agreement.service");
+  const file = await getAgreementSignedPdfFileByToken(req.params.token);
+  res.setHeader("Content-Type", file.mimeType);
+  res.setHeader("Content-Length", String(file.buffer.length));
+  res.setHeader("Content-Disposition", `inline; filename="${file.filename}"`);
+  return res.send(file.buffer);
+});
+
 export const health = asyncHandler(async (_req: Request, res: Response) => {
   const { prisma } = await import("../config/prisma");
   let db = "ok";

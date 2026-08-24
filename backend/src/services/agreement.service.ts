@@ -796,3 +796,18 @@ export async function getAgreementSignedPdfFile(id: string) {
     mimeType: "application/pdf",
   };
 }
+
+export async function getAgreementSignedPdfFileByToken(token: string) {
+  const agreement = await prisma.agreement.findUnique({
+    where: { token },
+    include: { tenant: { select: { name: true, phone: true } }, property: { select: { name: true, number: true, type: true } } },
+  });
+  if (!agreement) throw new NotFoundError("Agreement not found");
+
+  const pdfBuffer = await buildSignedAgreementPdf(agreement);
+  return {
+    buffer: pdfBuffer,
+    filename: `Signed-Agreement-${agreement.agreementNumber || agreement.id}.pdf`,
+    mimeType: "application/pdf",
+  };
+}

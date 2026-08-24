@@ -19,7 +19,7 @@ import {
   Phone,
   FileCheck,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, downloadUrl } from "@/lib/api";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, PageLoader } from "@/components/ui/primitives";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/overlay";
@@ -98,6 +98,7 @@ export default function PublicAgreementSignPage() {
   };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -109,6 +110,7 @@ export default function PublicAgreementSignPage() {
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     if (!isDrawing) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -124,7 +126,8 @@ export default function PublicAgreementSignPage() {
     setHasDrawn(true);
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     setIsDrawing(false);
   };
 
@@ -203,9 +206,7 @@ export default function PublicAgreementSignPage() {
   const propertyName = agreement.property?.name || "Property";
   const periodStr = `${agreement.startDate ? formatDate(agreement.startDate) : ""} – ${agreement.endDate ? formatDate(agreement.endDate) : ""}`;
 
-  const docUrl = isSigned
-    ? (agreement.signedPdf?.url || `${window.location.origin}/api/rent/agreements/${agreement.id}/signed-document`)
-    : (agreement.document?.url || `${window.location.origin}/api/rent/agreements/${agreement.id}/document`);
+  const docUrl = token ? downloadUrl(`/public/agreements/sign/${token}/pdf`) : "";
 
   const currentStep = isSigned ? 3 : (hasDrawn || typedName.trim()) ? 2 : 1;
 

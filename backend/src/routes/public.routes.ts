@@ -14,5 +14,7 @@ router.post("/contact", publicController.contact);
 router.post("/enquiry", publicController.enquiry);
 router.get("/agreements/sign/:token", publicController.getAgreementForSigning);
 router.post("/agreements/sign/:token", publicController.signAgreement);
+router.get("/agreements/sign/:token/pdf", publicController.getSignedAgreementPdf);
+router.get("/agreements/sign/:token/document", publicController.getSignedAgreementPdf);
 
 export default router;
