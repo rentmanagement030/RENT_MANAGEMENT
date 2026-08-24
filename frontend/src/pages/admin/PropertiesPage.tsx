@@ -145,11 +145,40 @@ export default function PropertiesPage() {
   ];
 
   // Portfolio Summary Calculations
+  // Portfolio Summary Calculations
   const allItems = allPropertiesData?.items ?? [];
   const totalCount = allItems.length;
-  const housesCount = allItems.filter((p) => p.type === "HOUSE").length;
+  const residentialProperties = allItems.filter((p) => p.type !== "PG");
+  const residentialCount = residentialProperties.length;
   const pgsCount = allItems.filter((p) => p.type === "PG").length;
-  const availableHousesCount = allItems.filter((p) => p.type === "HOUSE" && p.status === "AVAILABLE").length;
+
+  // Calculate Vacant Capacity strictly for residential homes, villas, multi-unit houses, single houses, and apartments
+  let vacantResidentialUnits = 0;
+  let totalResidentialUnits = 0;
+  let occupiedResidentialUnits = 0;
+
+  residentialProperties.forEach((p) => {
+    if (p.type === "VILLA" || p.type === "MULTI_UNIT_HOUSE" || p.type === "APARTMENT") {
+      const homes = p.homes || [];
+      const totalUnits = homes.length;
+      totalResidentialUnits += totalUnits;
+      const occupiedUnits = Math.max(
+        homes.filter((h: any) => h.status === "OCCUPIED" || (Array.isArray(h.tenants) && h.tenants.length > 0)).length,
+        (p.tenants || []).length
+      );
+      occupiedResidentialUnits += occupiedUnits;
+      vacantResidentialUnits += Math.max(0, totalUnits - occupiedUnits);
+    } else {
+      // Single House (HOUSE)
+      totalResidentialUnits += 1;
+      const isOccupied = p.status === "OCCUPIED" || (p.tenants || []).length > 0;
+      if (isOccupied) {
+        occupiedResidentialUnits += 1;
+      } else {
+        vacantResidentialUnits += 1;
+      }
+    }
+  });
 
   const totalMonthlyPotentialRent = allItems.reduce((sum, p) => {
     if ((p as any).potentialRevenue !== undefined && (p as any).potentialRevenue !== null) {
@@ -194,7 +223,7 @@ export default function PropertiesPage() {
 
   const availableBeds = Math.max(0, totalBeds - occupiedBeds);
   const bedOccupancyPercent = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
-  const vacantCapacityCount = availableBeds + availableHousesCount;
+  const vacantCapacityCount = vacantResidentialUnits;
 
   // City options
   const cityOptions = Array.from(new Set(allItems.map((p) => p.city).filter(Boolean)));
@@ -277,7 +306,7 @@ export default function PropertiesPage() {
           </div>
           <div>
             <div className="text-2xl sm:text-3xl font-black text-slate-900">{totalCount}</div>
-            <span className="text-[11px] font-bold text-slate-400">{housesCount} Houses · {pgsCount} PG</span>
+            <span className="text-[11px] font-bold text-slate-400">{residentialCount} Residential · {pgsCount} PG</span>
           </div>
         </div>
 
@@ -308,7 +337,7 @@ export default function PropertiesPage() {
           <div>
             <div className="text-2xl sm:text-3xl font-black text-emerald-600">{vacantCapacityCount}</div>
             <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">
-              Available beds & houses
+              Available in homes & villas
             </span>
           </div>
         </div>
