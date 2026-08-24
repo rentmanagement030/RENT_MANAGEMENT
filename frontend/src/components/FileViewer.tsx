@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, FileText, Maximize, Minimize, Printer, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/primitives";
+import { downloadUrl } from "@/lib/api";
 
 interface FileViewerProps {
   open: boolean;
@@ -14,8 +15,9 @@ const PDF_RE = /\.pdf$/i;
 
 export default function FileViewer({ open, name, url, onClose }: FileViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const resolvedUrl = downloadUrl(url);
   const isImage = IMAGE_RE.test(name) || IMAGE_RE.test(url);
-  const isPdf = PDF_RE.test(name) || PDF_RE.test(url);
+  const isPdf = PDF_RE.test(name) || PDF_RE.test(url) || (!isImage && !name.includes("."));
 
   const [zoom, setZoom] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
@@ -114,8 +116,10 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
           )}
 
           <a
-            href={url}
+            href={resolvedUrl}
             download={name}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
           >
             <Download className="size-3.5" /> <span className="hidden sm:inline">Download</span>
@@ -136,7 +140,7 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
       <div className="flex min-h-0 flex-1 items-center justify-center p-4 overflow-auto" onClick={onClose}>
         {isImage ? (
           <img
-            src={url}
+            src={resolvedUrl}
             alt={name}
             style={{ transform: `scale(${zoom})`, transition: "transform 0.2s ease" }}
             className="max-h-full max-w-full rounded-xl object-contain shadow-2xl"
@@ -145,7 +149,7 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
         ) : isPdf ? (
           <iframe
             ref={iframeRef}
-            src={url}
+            src={resolvedUrl}
             title={name}
             className="h-full w-full max-w-5xl rounded-xl border border-slate-700/80 bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
@@ -162,8 +166,10 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
               </p>
             </div>
             <a
-              href={url}
+              href={resolvedUrl}
               download={name}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors"
             >
               <Download className="size-4" /> Download File

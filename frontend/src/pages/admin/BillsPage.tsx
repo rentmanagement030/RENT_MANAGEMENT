@@ -49,7 +49,7 @@ import {
   Textarea,
 } from "@/components/ui/primitives";
 import { EmptyState, Pagination } from "@/components/ui/data";
-import { ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/overlay";
+import { ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
 import type { Bill, BillType } from "@/types";
 
@@ -247,8 +247,6 @@ export function BillStatusBadge({ status }: { status: string }) {
 function BillActionMenu({
   bill,
   canManage,
-  menuOpen,
-  onMenuOpenChange,
   onView,
   onPay,
   onPenalty,
@@ -258,73 +256,16 @@ function BillActionMenu({
 }: {
   bill: Bill;
   canManage: boolean;
-  menuOpen: boolean;
-  onMenuOpenChange: (open: boolean) => void;
   onView: () => void;
   onPay: () => void;
   onPenalty: () => void;
   onWaivePenalty?: () => void;
   onCancel: () => void;
   onDelete: () => void;
+  menuOpen?: boolean;
+  onMenuOpenChange?: (open: boolean) => void;
 }) {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number } | null>(null);
   const status = bill.status;
-
-  useLayoutEffect(() => {
-    if (!menuOpen || !buttonRef.current) {
-      setPos(null);
-      return;
-    }
-    const rect = buttonRef.current.getBoundingClientRect();
-    // Ignore hidden elements (e.g. mobile cards on desktop view or desktop table on mobile view)
-    if (rect.width === 0 && rect.height === 0) {
-      setPos(null);
-      return;
-    }
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const menuHeight = 220;
-    const left = Math.max(12, Math.min(rect.right - 208, window.innerWidth - 220));
-
-    if (spaceBelow < menuHeight && rect.top > menuHeight) {
-      setPos({ bottom: window.innerHeight - rect.top + 6, left });
-    } else {
-      setPos({ top: rect.bottom + 6, left });
-    }
-  }, [menuOpen]);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (buttonRef.current?.contains(target)) return;
-      if (menuRef.current?.contains(target)) return;
-      onMenuOpenChange(false);
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onMenuOpenChange(false);
-    };
-    const handleScrollOrResize = () => onMenuOpenChange(false);
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("scroll", handleScrollOrResize, true);
-    window.addEventListener("resize", handleScrollOrResize);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("scroll", handleScrollOrResize, true);
-      window.removeEventListener("resize", handleScrollOrResize);
-    };
-  }, [menuOpen, onMenuOpenChange]);
-
-  const handleAction = (e: React.MouseEvent, actionFn: () => void) => {
-    e.preventDefault();
-    e.stopPropagation();
-    actionFn();
-    onMenuOpenChange(false);
-  };
-
   const rawPhone = bill.tenant?.phone ?? "";
   const cleanPhone = rawPhone.replace(/\D/g, "");
   const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone.startsWith("91") ? cleanPhone : `91${cleanPhone}`;
@@ -334,120 +275,91 @@ function BillActionMenu({
   const waUrl = cleanPhone ? `https://wa.me/${formattedPhone}?text=${reminderMsg}` : null;
 
   return (
-    <>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onMenuOpenChange(!menuOpen);
-        }}
-        className="inline-flex size-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 active:scale-95 transition-all shadow-2xs shrink-0"
-        title="More Actions"
-      >
-        <MoreVertical className="size-3.5" />
-      </button>
-
-      {menuOpen && pos && createPortal(
-        <div
-          ref={menuRef}
-          style={{
-            position: "fixed",
-            ...(pos.top !== undefined ? { top: `${pos.top}px` } : {}),
-            ...(pos.bottom !== undefined ? { bottom: `${pos.bottom}px` } : {}),
-            left: `${pos.left}px`,
-            width: "208px",
-            zIndex: 99999,
-          }}
-          className="rounded-xl border border-slate-200 bg-white py-1.5 text-slate-700 shadow-2xl ring-1 ring-black/5 text-xs font-bold animate-in fade-in-50 zoom-in-95"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex size-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 active:scale-95 transition-all shadow-2xs shrink-0 cursor-pointer focus:outline-none"
+          title="More Actions"
         >
-          <div className="py-0.5">
-            {/* VIEW DETAILS */}
-            <button
-              type="button"
-              onClick={(e) => handleAction(e, onView)}
-              className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors text-left"
+          <MoreVertical className="size-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52 rounded-xl border border-slate-200 bg-white p-1 text-slate-700 shadow-2xl z-50">
+        <DropdownMenuItem
+          onClick={onView}
+          className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-lg"
+        >
+          <Eye className="size-4 text-slate-400 shrink-0" /> View Bill Details
+        </DropdownMenuItem>
+
+        {Number(bill.outstanding) > 0 && status !== "CANCELLED" && (
+          <DropdownMenuItem
+            onClick={onPay}
+            className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-lg"
+          >
+            <CreditCard className="size-4 text-blue-600 shrink-0" /> Record Payment
+          </DropdownMenuItem>
+        )}
+
+        {waUrl && Number(bill.outstanding) > 0 && status !== "CANCELLED" && (
+          <DropdownMenuItem asChild>
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-lg"
             >
-              <Eye className="size-4 text-slate-400 shrink-0" /> View Bill Details
-            </button>
+              <WhatsAppIcon className="size-4 text-emerald-600 shrink-0" /> Send Reminder
+            </a>
+          </DropdownMenuItem>
+        )}
 
-            {/* RECORD PAYMENT */}
-            {Number(bill.outstanding) > 0 && status !== "CANCELLED" && (
-              <button
-                type="button"
-                onClick={(e) => handleAction(e, onPay)}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 transition-colors text-left"
+        {canManage && status !== "CANCELLED" && (
+          <>
+            <DropdownMenuSeparator className="my-1 bg-slate-100" />
+            {bill.billType === "RENT" && (status === "OVERDUE" || status === "PENDING" || status === "PARTIAL") && (
+              <DropdownMenuItem
+                onClick={onPenalty}
+                className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-lg"
               >
-                <CreditCard className="size-4 text-blue-600 shrink-0" /> Record Payment
-              </button>
+                <HandCoins className="size-4 text-amber-600 shrink-0" /> Apply Late Penalty
+              </DropdownMenuItem>
             )}
 
-            {/* SEND REMINDER */}
-            {waUrl && Number(bill.outstanding) > 0 && status !== "CANCELLED" && (
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => onMenuOpenChange(false)}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition-colors text-left"
+            {bill.billType === "RENT" && onWaivePenalty && Number(bill.penaltyAmount || 0) > 0 && (
+              <DropdownMenuItem
+                onClick={onWaivePenalty}
+                className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-lg"
               >
-                <WhatsAppIcon className="size-4 text-emerald-600 shrink-0" /> Send Reminder
-              </a>
+                <Sparkles className="size-4 text-emerald-600 shrink-0" /> Waive Penalty
+              </DropdownMenuItem>
             )}
-          </div>
 
-          {canManage && status !== "CANCELLED" && (
-            <div className="my-1 border-t border-slate-100 pt-1">
-              {/* PENALTY */}
-              {bill.billType === "RENT" && (status === "OVERDUE" || status === "PENDING" || status === "PARTIAL") && (
-                <button
-                  type="button"
-                  onClick={(e) => handleAction(e, onPenalty)}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 transition-colors text-left"
-                >
-                  <HandCoins className="size-4 text-amber-600 shrink-0" /> Apply Late Penalty
-                </button>
-              )}
-
-              {/* WAIVE PENALTY */}
-              {bill.billType === "RENT" && onWaivePenalty && Number(bill.penaltyAmount || 0) > 0 && (
-                <button
-                  type="button"
-                  onClick={(e) => handleAction(e, onWaivePenalty)}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition-colors text-left"
-                >
-                  <Sparkles className="size-4 text-emerald-600 shrink-0" /> Waive / Neglect Penalty
-                </button>
-              )}
-
-              {/* CANCEL */}
-              {status !== "PAID" && (
-                <button
-                  type="button"
-                  onClick={(e) => handleAction(e, onCancel)}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 transition-colors text-left"
-                >
-                  <Ban className="size-4 text-rose-600 shrink-0" /> Cancel Bill
-                </button>
-              )}
-            </div>
-          )}
-
-          {canManage && status === "CANCELLED" && (
-            <div className="my-1 border-t border-slate-100 pt-1">
-              <button
-                type="button"
-                onClick={(e) => handleAction(e, onDelete)}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 transition-colors text-left"
+            {status !== "PAID" && (
+              <DropdownMenuItem
+                onClick={onCancel}
+                className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 rounded-lg"
               >
-                <Trash2 className="size-4 text-rose-600 shrink-0" /> Delete Permanently
-              </button>
-            </div>
-          )}
-        </div>,
-        document.body
-      )}
-    </>
+                <Ban className="size-4 text-rose-600 shrink-0" /> Cancel Bill
+              </DropdownMenuItem>
+            )}
+          </>
+        )}
+
+        {canManage && status === "CANCELLED" && (
+          <>
+            <DropdownMenuSeparator className="my-1 bg-slate-100" />
+            <DropdownMenuItem
+              onClick={onDelete}
+              className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 rounded-lg"
+            >
+              <Trash2 className="size-4 text-rose-600 shrink-0" /> Delete Permanently
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

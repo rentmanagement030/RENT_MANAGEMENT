@@ -30,14 +30,19 @@ export function DialogContent({
   className,
   children,
   hideClose,
+  onOpenAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & { hideClose?: boolean }) {
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          onOpenAutoFocus?.(e);
+        }}
         className={cn(
-          "fixed z-50 grid w-full gap-4 border bg-white text-slate-900 p-6 shadow-2xl transition-all duration-200 overflow-x-hidden",
+          "fixed z-50 grid w-full gap-4 border bg-white text-slate-900 p-6 shadow-2xl transition-all duration-200 overflow-x-hidden touch-manipulation",
           // Mobile bottom-sheet positioning
           "bottom-0 inset-x-0 rounded-t-3xl border-t border-slate-200 max-h-[88vh] overflow-y-auto animate-bottom-sheet",
           // Desktop centered modal positioning

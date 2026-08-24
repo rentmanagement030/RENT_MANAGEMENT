@@ -89,15 +89,17 @@ export default function NotificationsPage() {
       />
 
       {configStatus.data && (!configStatus.data.whatsapp || !configStatus.data.email) && (
-        <Card className="border-amber-500/30 bg-amber-500/10 text-amber-300">
-          <CardContent className="flex flex-col gap-1 pt-4 text-xs">
-            <p className="font-bold text-amber-200">Delivery Channels Warning</p>
-            <p className="text-amber-300/80">
-              {!configStatus.data.whatsapp && "Meta WhatsApp Cloud API credentials missing in backend/.env. "}
-              1-tap WhatsApp sharing links remain fully active for all admin users.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="space-y-1 text-xs">
+              <p className="font-black text-amber-950 text-sm">Delivery Channels Configuration Notice</p>
+              <p className="font-semibold text-amber-900 leading-relaxed">
+                {!configStatus.data.whatsapp && "Meta WhatsApp Cloud API credentials not configured in backend/.env. "}
+                1-tap WhatsApp sharing links remain fully active for all admin users.
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       <Card>

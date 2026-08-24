@@ -36,7 +36,7 @@ import {
   Download,
   Check,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, downloadUrl } from "@/lib/api";
 import { formatINR, formatDate } from "@/lib/format";
 import { useAuth } from "@/auth/AuthContext";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -1068,7 +1068,7 @@ function DocumentCard({
 
         {doc.downloadUrl && (
           <a
-            href={doc.downloadUrl}
+            href={downloadUrl(doc.downloadUrl)}
             target="_blank"
             rel="noreferrer"
             className="inline-flex h-8 px-3 items-center justify-center gap-1 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 font-bold text-xs text-slate-700 transition-colors"

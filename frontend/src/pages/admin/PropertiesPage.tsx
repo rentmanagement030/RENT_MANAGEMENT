@@ -642,7 +642,7 @@ export default function PropertiesPage() {
                                     View
                                   </Link>
                                   {can(PERMISSIONS.PROPERTIES_MANAGE) && (
-                                    <button onClick={() => setEditing(p)} className="font-bold text-slate-600 hover:text-slate-900">
+                                    <button type="button" onClick={() => setEditing(p)} className="font-bold text-slate-600 hover:text-slate-900">
                                       Edit
                                     </button>
                                   )}
@@ -1353,14 +1353,6 @@ export function PropertyFormDialog({
         })),
       ];
       setImages(newImageList);
-
-      if (property) {
-        await api.setPropertyImages(
-          property.id,
-          newImageList.map((i) => ({ url: i.url, storageKey: i.storageKey, isPrimary: i.isPrimary })),
-        );
-        success(`${uploaded.length} photo(s) saved`);
-      }
     } catch (e) {
       toastError("Upload failed", e instanceof Error ? e.message : undefined);
     } finally {
@@ -1368,36 +1360,14 @@ export function PropertyFormDialog({
     }
   };
 
-  const handleRemovePhoto = async (img: PropertyImage) => {
+  const handleRemovePhoto = (img: PropertyImage) => {
     const updated = images.filter((i) => (img.id ? i.id !== img.id : i.url !== img.url));
     setImages(updated);
-    if (property) {
-      try {
-        await api.setPropertyImages(
-          property.id,
-          updated.map((i) => ({ url: i.url, storageKey: i.storageKey, isPrimary: i.isPrimary })),
-        );
-        success("Photo removed");
-      } catch (e) {
-        toastError("Remove failed", e instanceof Error ? e.message : undefined);
-      }
-    }
   };
 
-  const handleSetPrimaryPhoto = async (img: PropertyImage) => {
+  const handleSetPrimaryPhoto = (img: PropertyImage) => {
     const updated = images.map((i) => ({ ...i, isPrimary: img.id ? i.id === img.id : i.url === img.url }));
     setImages(updated);
-    if (property) {
-      try {
-        await api.setPropertyImages(
-          property.id,
-          updated.map((i) => ({ url: i.url, storageKey: i.storageKey, isPrimary: i.isPrimary })),
-        );
-        success("Cover photo updated");
-      } catch (e) {
-        toastError("Update failed", e instanceof Error ? e.message : undefined);
-      }
-    }
   };
 
   const mutation = useMutation({
@@ -1451,12 +1421,11 @@ export function PropertyFormDialog({
         }
       }
 
-      if (!property && images.length > 0) {
-        await api.setPropertyImages(
-          savedProp.id,
-          images.map((i) => ({ url: i.url, storageKey: i.storageKey, isPrimary: i.isPrimary })),
-        );
-      }
+      // Save property images together upon explicit form submission
+      await api.setPropertyImages(
+        savedProp.id,
+        images.map((i) => ({ url: i.url, storageKey: i.storageKey ?? undefined, isPrimary: i.isPrimary })),
+      );
       return savedProp;
     },
     onSuccess: (p) => {

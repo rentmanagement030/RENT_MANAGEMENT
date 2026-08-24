@@ -8,9 +8,11 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   try {
     let token = req.cookies?.[SESSION_COOKIE];
     
-    // Fallback for Safari/Mobile cross-domain tracking prevention
+    // Fallback for Safari/Mobile cross-domain tracking prevention & direct download links
     if (!token && req.headers.authorization?.startsWith("Bearer ")) {
       token = req.headers.authorization.substring(7);
+    } else if (!token && typeof req.query.token === "string" && req.query.token.length > 0) {
+      token = req.query.token;
     }
 
     if (!token) {

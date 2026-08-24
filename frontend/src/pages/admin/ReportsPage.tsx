@@ -74,23 +74,103 @@ export default function ReportsPage() {
         }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="sm:w-40 font-semibold" placeholder="From Date" />
-        <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="sm:w-40 font-semibold" placeholder="To Date" />
-        <FilterSelect value={method} onChange={(e) => setMethod(e.target.value)} className="sm:w-44 font-semibold">
-          <option value="">All payment methods</option>
-          <option value="CASH">Cash</option>
-          <option value="BANK_TRANSFER_DD">Bank / DD</option>
-          <option value="RAZORPAY_UPI">Razorpay UPI</option>
-        </FilterSelect>
-        <FilterSelect value={propertyId} onChange={(e) => setPropertyId(e.target.value)} className="sm:w-56 font-bold">
-          <option value="">All properties</option>
-          {(properties?.items ?? []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} ({p.type === "HOUSE" ? "House" : "PG"})
-            </option>
-          ))}
-        </FilterSelect>
+      {/* Date Presets & Filter Controls */}
+      <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-500 mr-1">Quick Range:</span>
+            <button
+              type="button"
+              onClick={() => {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+                const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+                setFrom(start);
+                setTo(end);
+              }}
+              className="px-3 py-1 text-xs font-extrabold rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 transition-colors"
+            >
+              This Month
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const now = new Date();
+                const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                const end = now.toISOString().slice(0, 10);
+                setFrom(start);
+                setTo(end);
+              }}
+              className="px-3 py-1 text-xs font-extrabold rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 transition-colors"
+            >
+              Last 30 Days
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const now = new Date();
+                const currentYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+                const start = `${currentYear}-04-01`;
+                const end = now.toISOString().slice(0, 10);
+                setFrom(start);
+                setTo(end);
+              }}
+              className="px-3 py-1 text-xs font-extrabold rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 transition-colors"
+            >
+              FY {new Date().getMonth() >= 3 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFrom("");
+                setTo("");
+              }}
+              className="px-3 py-1 text-xs font-extrabold rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 transition-colors"
+            >
+              All Time
+            </button>
+          </div>
+
+          {(from || to || method || propertyId) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFrom("");
+                setTo("");
+                setMethod("");
+                setPropertyId("");
+              }}
+              className="text-xs font-black text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1"
+            >
+              Reset Filters
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap items-center">
+          <div className="w-full sm:w-auto flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 shrink-0">From:</span>
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full sm:w-40 font-semibold h-10 rounded-xl" />
+          </div>
+          <div className="w-full sm:w-auto flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 shrink-0">To:</span>
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full sm:w-40 font-semibold h-10 rounded-xl" />
+          </div>
+          <FilterSelect value={method} onChange={(e) => setMethod(e.target.value)} className="w-full sm:w-44 font-semibold h-10">
+            <option value="">All payment methods</option>
+            <option value="CASH">Cash</option>
+            <option value="BANK_TRANSFER_DD">Bank / DD</option>
+            <option value="RAZORPAY_UPI">Razorpay UPI</option>
+          </FilterSelect>
+          <FilterSelect value={propertyId} onChange={(e) => setPropertyId(e.target.value)} className="w-full sm:w-56 font-bold h-10">
+            <option value="">All properties</option>
+            {(properties?.items ?? []).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} ({p.type === "HOUSE" ? "House" : "PG"})
+              </option>
+            ))}
+          </FilterSelect>
+        </div>
       </div>
 
       {/* Property Profitability Analysis Dashboard Card (Rule 7 & 8) */}
