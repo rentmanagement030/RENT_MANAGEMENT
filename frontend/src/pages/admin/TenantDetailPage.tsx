@@ -1465,7 +1465,7 @@ export function TransferTenantModal({
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
             <span className="text-[10px] uppercase font-extrabold text-slate-400 block">Current Stay Assignment</span>
             <p className="font-extrabold text-slate-900">
-              {tenant.property?.name || "Unassigned"} {tenant.home ? `· ${tenant.home.homeNumber} (${tenant.home.floor})` : ""} {tenant.room ? `· Room ${tenant.room.roomNumber}` : ""} {tenant.bed ? `(Bed ${tenant.bed.bedNumber})` : ""}
+              {tenant.property?.name || "Unassigned"} {(tenant as any).home ? `· ${(tenant as any).home.homeNumber} (${(tenant as any).home.floor})` : ""} {tenant.room ? `· Room ${tenant.room.roomNumber}` : ""} {tenant.bed ? `(Bed ${tenant.bed.bedNumber})` : ""}
             </p>
             <p className="text-slate-600 font-bold">Current Rent: {formatINR(tenant.rent)}/mo</p>
           </div>
