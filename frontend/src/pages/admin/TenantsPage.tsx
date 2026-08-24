@@ -1874,6 +1874,7 @@ function TenantFormDialog({
         deposit: String(h.deposit || f.deposit),
         dueDay: String(h.dueDay || 5),
       }));
+      if (fieldErrors.homeId) setFieldErrors((prev) => ({ ...prev, homeId: "" }));
     }
   };
 
@@ -1887,10 +1888,11 @@ function TenantFormDialog({
       rent: r?.rent ? String(r.rent) : f.rent,
       deposit: r?.deposit ? String(r.deposit) : f.deposit,
     }));
+    if (fieldErrors.roomId) setFieldErrors((prev) => ({ ...prev, roomId: "" }));
   };
 
   // When PG Bed changes
-  const handleBedChange = (bid: string) => {
+  const handleBedSelect = (bid: string) => {
     const b = beds.find((item) => item.id === bid);
     setForm((f) => ({
       ...f,
@@ -1898,6 +1900,7 @@ function TenantFormDialog({
       rent: b?.rent ? String(b.rent) : f.rent,
       deposit: b?.deposit ? String(b.deposit) : f.deposit,
     }));
+    if (fieldErrors.bedId) setFieldErrors((prev) => ({ ...prev, bedId: "" }));
   };
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -1913,6 +1916,18 @@ function TenantFormDialog({
     if (form.email) {
       const emailErr = validateEmail(form.email, false, "Email Address");
       if (emailErr) errs.email = emailErr;
+    }
+
+    if (selectedProperty && homesList.length > 0 && !form.homeId) {
+      errs.homeId = "Please select a specific home unit for this property";
+    }
+
+    if (selectedProperty && selectedProperty.type === "PG") {
+      if (!form.roomId) {
+        errs.roomId = "Please select a room";
+      } else if (beds.length > 0 && !form.bedId) {
+        errs.bedId = "Please select a bed";
+      }
     }
 
     if (form.aadhaarNumber) {
@@ -2089,6 +2104,9 @@ function TenantFormDialog({
                   value={form.homeId}
                   onChange={handleHomeSelect}
                 />
+                {fieldErrors.homeId && (
+                  <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.homeId}</p>
+                )}
               </div>
             )}
 

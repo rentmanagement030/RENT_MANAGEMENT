@@ -777,12 +777,14 @@ export default function PropertyDetailAdminPage() {
                         t.home ||
                         homesList.find((h) => h.id === t.homeId || h.activeTenant?.id === t.id);
                       const unitBadge = assignedHome
-                        ? `${assignedHome.homeNumber} (${assignedHome.floor || "Unit"})`
+                      const isUnallocated = isMultiUnit && !assignedHome;
+                      const unitBadge = assignedHome
+                        ? `${assignedHome.homeNumber || assignedHome.name || "Unit"} (${assignedHome.floor || "Floor"})`
                         : t.room
                         ? `Room ${t.room.roomNumber}${t.bed ? ` / Bed ${t.bed.bedNumber}` : ""}`
                         : property.type === "HOUSE"
                         ? "Entire House"
-                        : "Allocated Resident";
+                        : "Unallocated Unit";
 
                       return (
                         <li key={t.id} className="p-3 sm:p-3.5 flex items-center justify-between gap-2 hover:bg-slate-50/60 transition-colors min-w-0">
@@ -795,7 +797,12 @@ export default function PropertyDetailAdminPage() {
                                 <Link to={`/admin/tenants/${t.id}`} className="font-extrabold text-xs text-slate-900 hover:text-blue-600 truncate">
                                   {t.name}
                                 </Link>
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/70 text-[10px] font-bold shrink-0">
+                                <span className={cn(
+                                  "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold shrink-0",
+                                  isUnallocated
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                    : "bg-blue-50 text-blue-700 border border-blue-200/70"
+                                )}>
                                   {unitBadge}
                                 </span>
                               </div>
