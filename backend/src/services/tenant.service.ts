@@ -205,7 +205,7 @@ export async function createTenant(input: TenantInput, req: Request, actorId: st
       data.bed = { connect: { id: input.bedId } };
       await tx.pgBed.update({ where: { id: input.bedId }, data: { status: "OCCUPIED", tenantId: null } });
     }
-    const created = await tx.tenant.create({ data });
+    const created = await tx.tenant.create({ data, include: tenantInclude });
     if (input.bedId) {
       await tx.pgBed.update({ where: { id: input.bedId }, data: { tenantId: created.id, status: "OCCUPIED" } });
     }
@@ -286,7 +286,7 @@ export async function updateTenant(
   }
 
   const updated = await prisma.$transaction(async (tx) => {
-    const res = await tx.tenant.update({ where: { id }, data });
+    const res = await tx.tenant.update({ where: { id }, data, include: tenantInclude });
 
     // Bed updates
     if (input.bedId !== undefined) {

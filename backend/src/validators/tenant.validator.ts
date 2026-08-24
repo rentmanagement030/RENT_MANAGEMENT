@@ -10,12 +10,14 @@ export const tenantCreateSchema = z.object({
   emergencyName: z.string().max(100).optional().or(z.literal("")),
   emergencyPhone: optionalPhoneSchema,
   propertyId: z.string().min(1).optional().or(z.literal("")),
+  homeId: z.string().min(1).optional().or(z.literal("")),
   roomId: z.string().min(1).optional().or(z.literal("")),
   bedId: z.string().min(1).optional().or(z.literal("")),
   rent: amountSchema,
   advance: z.coerce.number().min(0).optional().default(0),
   deposit: z.coerce.number().min(0).optional().default(0),
   joiningDate: dateSchema.optional(),
+  dueDay: z.coerce.number().min(1).max(31).optional().default(5),
   status: z.enum(["ACTIVE", "INACTIVE", "FORMER", "PENDING"]).optional(),
   notes: z.string().max(1000).optional().or(z.literal("")),
 });
@@ -40,6 +42,7 @@ export const familyMemberUpdateSchema = familyMemberCreateSchema.partial();
 
 export const tenantTransferSchema = z.object({
   toPropertyId: z.string().min(1, "Target property is required"),
+  toHomeId: z.string().optional().or(z.literal("")),
   toRoomId: z.string().optional().or(z.literal("")),
   toBedId: z.string().optional().or(z.literal("")),
   toRent: amountSchema,
