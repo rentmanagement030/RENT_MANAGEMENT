@@ -1,4 +1,4 @@
-import { forwardRef, useState, useRef, useEffect, useMemo } from "react";
+import React, { forwardRef, useState, useRef, useEffect, useMemo, Children, isValidElement } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { ChevronDown, Loader2, Check, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -101,21 +101,23 @@ interface ParsedOption {
 
 function parseSelectChildren(children: React.ReactNode): ParsedOption[] {
   const options: ParsedOption[] = [];
-  React.Children.forEach(children, (child) => {
-    if (React.isValidElement(child)) {
+  Children.forEach(children, (child) => {
+    if (isValidElement(child)) {
+      const childProps = child.props as any;
       if (child.type === "option") {
         options.push({
-          value: String(child.props.value ?? ""),
-          label: String(child.props.children ?? child.props.value ?? ""),
-          disabled: Boolean(child.props.disabled),
+          value: String(childProps.value ?? ""),
+          label: String(childProps.children ?? childProps.value ?? ""),
+          disabled: Boolean(childProps.disabled),
         });
-      } else if (child.type === "optgroup" && (child.props as any).children) {
-        React.Children.forEach((child.props as any).children, (sub) => {
-          if (React.isValidElement(sub) && sub.type === "option") {
+      } else if (child.type === "optgroup" && childProps.children) {
+        Children.forEach(childProps.children, (sub) => {
+          if (isValidElement(sub) && sub.type === "option") {
+            const subProps = sub.props as any;
             options.push({
-              value: String(sub.props.value ?? ""),
-              label: String(sub.props.children ?? sub.props.value ?? ""),
-              disabled: Boolean(sub.props.disabled),
+              value: String(subProps.value ?? ""),
+              label: String(subProps.children ?? subProps.value ?? ""),
+              disabled: Boolean(subProps.disabled),
             });
           }
         });
