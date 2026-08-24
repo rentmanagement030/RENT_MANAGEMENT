@@ -195,29 +195,22 @@ export default function PropertyDetailAdminPage() {
 
   const activeTenantsList = (property.tenants || []).filter((t: any) => t.status === "ACTIVE" || !t.status);
 
-  const homesList: PropertyHome[] = (property.homes || []).map((h: any, idx: number) => {
-    let activeTenant =
-      (property.tenants || []).find((t: any) => t.homeId === h.id || t.home?.id === h.id) ||
-      (Array.isArray(h.tenants) && h.tenants.length > 0 ? h.tenants[0] : null) ||
-      h.activeTenant ||
+  const homesList: PropertyHome[] = (property.homes || []).map((h: any) => {
+    // Only associate tenant with this specific home if explicitly assigned to this home ID
+    const activeTenant =
+      (property.tenants || []).find(
+        (t: any) => (t.status === "ACTIVE" || !t.status) && (t.homeId === h.id || t.home?.id === h.id)
+      ) ||
+      (Array.isArray(h.tenants) && h.tenants.length > 0
+        ? h.tenants.find((t: any) => t.status === "ACTIVE" || !t.status)
+        : null) ||
       null;
 
-    // Fallback: If tenant is in property but homeId was unlinked, pair with matching rent or available home
-    if (!activeTenant && activeTenantsList.length > 0) {
-      const unassignedTenant = activeTenantsList.find((t: any) => {
-        const hasOtherHome = (property.homes || []).some((other: any) => other.id === t.homeId && other.id !== h.id);
-        return !hasOtherHome && (Number(t.rent) === Number(h.rent) || idx === 0);
-      });
-      if (unassignedTenant) {
-        activeTenant = unassignedTenant;
-      }
-    }
-
-    const isOccupied = h.status === "OCCUPIED" || Boolean(activeTenant);
+    const isOccupied = Boolean(activeTenant);
     return {
       ...h,
-      status: isOccupied ? "OCCUPIED" : h.status,
-      activeTenant,
+      status: isOccupied ? "OCCUPIED" : (h.status === "OCCUPIED" && !activeTenant ? "AVAILABLE" : (h.status || "AVAILABLE")),
+      activeTenant: activeTenant || null,
     };
   });
   const totalHomesCount = homesList.length;
@@ -255,12 +248,9 @@ export default function PropertyDetailAdminPage() {
 
   const displayTotalDeposit = isMultiUnit && totalHomesCount > 0 ? totalHomesDeposit : Number(property.deposit || 0);
 
-  const occupiedHomesCount = Math.max(
-    homesList.filter((h) => h.status === "OCCUPIED" || h.activeTenant).length,
-    isMultiUnit ? activeTenantsList.length : 0
-  );
-  const availableHomesCount = Math.max(0, totalHomesCount - occupiedHomesCount);
-  const maintenanceHomesCount = homesList.filter((h) => h.status === "MAINTENANCE").length;
+  const occupiedHomesCount = homesList.filter((h) => h.status === "OCCUPIED" || Boolean(h.activeTenant)).length;
+  const maintenanceHomesCount = homesList.filter((h) => h.status === "MAINTENANCE" && !h.activeTenant).length;
+  const availableHomesCount = Math.max(0, totalHomesCount - occupiedHomesCount - maintenanceHomesCount);
 
   const roomTotal = property.roomCounts?.total || pgTotalBeds || 0;
   const occupancyRate = isMultiUnit

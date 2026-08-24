@@ -89,6 +89,15 @@ export async function ensureRolesAndPermissions() {
       await prisma.propertyHome.update({ where: { id: h.id }, data: { status: "OCCUPIED" } });
     }
   }
+
+  // Ensure homes without active tenants are marked AVAILABLE (unless maintenance)
+  const vacantHomes = await prisma.propertyHome.findMany({
+    where: { tenants: { none: { status: "ACTIVE" } }, status: "OCCUPIED" },
+    select: { id: true },
+  });
+  for (const h of vacantHomes) {
+    await prisma.propertyHome.update({ where: { id: h.id }, data: { status: "AVAILABLE" } });
+  }
 }
 
 export async function listUsers(query: Record<string, unknown>) {
