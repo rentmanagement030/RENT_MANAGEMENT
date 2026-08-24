@@ -54,18 +54,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const credential = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await credential.user.getIdToken();
-      const me = await api.firebaseLogin(idToken);
+      // 1. Primary authentication via C2D Backend API
+      const me = await api.login(email, password);
       setUser(me);
       return me;
-    } catch (fbErr) {
+    } catch (backendErr) {
+      // 2. Optional fallback to Firebase Auth if user exists only in Firebase
       try {
-        const me = await api.login(email, password);
+        const credential = await signInWithEmailAndPassword(auth, email, password);
+        const idToken = await credential.user.getIdToken();
+        const me = await api.firebaseLogin(idToken);
         setUser(me);
         return me;
       } catch {
-        throw fbErr instanceof Error ? fbErr : new Error("Invalid email or password");
+        throw backendErr instanceof Error ? backendErr : new Error("Invalid email or password");
       }
     }
   }, []);
