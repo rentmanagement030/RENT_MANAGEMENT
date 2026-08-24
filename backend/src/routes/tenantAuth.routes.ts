@@ -35,6 +35,7 @@ router.get(
         where: { id: tenantId },
         include: {
           property: true,
+          home: true,
           room: true,
           bed: true,
           agreements: { where: { status: "ACTIVE" }, take: 1 },
