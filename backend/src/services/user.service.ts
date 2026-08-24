@@ -54,6 +54,12 @@ export async function ensureRolesAndPermissions() {
       skipDuplicates: true,
     });
   }
+
+  // Ensure active properties are publicly visible by default
+  await prisma.property.updateMany({
+    where: { archived: false, publicVisibility: false },
+    data: { publicVisibility: true },
+  });
 }
 
 export async function listUsers(query: Record<string, unknown>) {

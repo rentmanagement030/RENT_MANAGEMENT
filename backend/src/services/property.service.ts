@@ -112,7 +112,7 @@ export async function createProperty(input: PropertyInput, req: Request, actorId
       status: input.status ?? "AVAILABLE",
       description: input.description || null,
       amenities: input.amenities ?? [],
-      publicVisibility: input.publicVisibility ?? false,
+      publicVisibility: input.publicVisibility ?? true,
       contactPhone: input.contactPhone || null,
       bhkType: input.bhkType || null,
       maxCapacity: input.maxCapacity ?? null,

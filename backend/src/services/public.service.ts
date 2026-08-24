@@ -9,9 +9,8 @@ import { enqueue } from "../jobs/queue";
 import type { Request } from "express";
 
 const publicWhere: Prisma.PropertyWhereInput = {
-  publicVisibility: true,
-  status: "AVAILABLE",
   archived: false,
+  status: { not: "MAINTENANCE" },
 };
 
 export async function listPublicProperties(query: Record<string, unknown>) {
