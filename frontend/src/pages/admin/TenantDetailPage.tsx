@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { api, downloadUrl } from "@/lib/api";
 import { formatINR, formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
 import { PERMISSIONS } from "@/lib/permissions";
 import {
