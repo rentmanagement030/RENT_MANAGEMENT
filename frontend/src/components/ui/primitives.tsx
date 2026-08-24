@@ -99,24 +99,34 @@ interface ParsedOption {
   disabled?: boolean;
 }
 
+function extractNodeText(node: React.ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(extractNodeText).join("");
+  if (isValidElement(node)) return extractNodeText((node.props as any)?.children);
+  return "";
+}
+
 function parseSelectChildren(children: React.ReactNode): ParsedOption[] {
   const options: ParsedOption[] = [];
   Children.forEach(children, (child) => {
     if (isValidElement(child)) {
       const childProps = child.props as any;
       if (child.type === "option") {
+        const text = extractNodeText(childProps.children).trim();
         options.push({
           value: String(childProps.value ?? ""),
-          label: String(childProps.children ?? childProps.value ?? ""),
+          label: text || String(childProps.value ?? ""),
           disabled: Boolean(childProps.disabled),
         });
       } else if (child.type === "optgroup" && childProps.children) {
         Children.forEach(childProps.children, (sub) => {
           if (isValidElement(sub) && sub.type === "option") {
             const subProps = sub.props as any;
+            const text = extractNodeText(subProps.children).trim();
             options.push({
               value: String(subProps.value ?? ""),
-              label: String(subProps.children ?? subProps.value ?? ""),
+              label: text || String(subProps.value ?? ""),
               disabled: Boolean(subProps.disabled),
             });
           }

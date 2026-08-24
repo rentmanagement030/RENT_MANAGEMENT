@@ -33,7 +33,7 @@ import {
   Link2,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { formatINR, formatDate } from "@/lib/format";
+import { formatINR, formatDate, formatPropertyType } from "@/lib/format";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { usePageResetOnFilter } from "@/hooks/usePageResetOnFilter";
 import { useAuth } from "@/auth/AuthContext";
@@ -1621,6 +1621,38 @@ function AgreementFormModal({
       });
     }
   }, [editingAgreement]);
+  const handleTenantChange = (tenantId: string) => {
+    const selectedTenant = tenants.find((t) => t.id === tenantId);
+    setForm((f) => {
+      const updated = { ...f, tenantId };
+      if (selectedTenant) {
+        if (selectedTenant.propertyId) updated.propertyId = selectedTenant.propertyId;
+        if (selectedTenant.joiningDate) {
+          updated.startDate = toDateInput(selectedTenant.joiningDate);
+          const start = new Date(selectedTenant.joiningDate);
+          const end = new Date(start);
+          end.setMonth(end.getMonth() + 11);
+          updated.endDate = toDateInput(end);
+        }
+        if (selectedTenant.rent) updated.rent = String(selectedTenant.rent);
+        if (selectedTenant.deposit) updated.deposit = String(selectedTenant.deposit);
+        if (selectedTenant.advance) updated.advance = String(selectedTenant.advance);
+      }
+      return updated;
+    });
+  };
+
+  const handlePropertyChange = (propertyId: string) => {
+    const selectedProperty = properties.find((p) => p.id === propertyId);
+    setForm((f) => {
+      const updated = { ...f, propertyId };
+      if (selectedProperty) {
+        if (selectedProperty.rent && !f.rent) updated.rent = String(selectedProperty.rent);
+        if (selectedProperty.deposit && !f.deposit) updated.deposit = String(selectedProperty.deposit);
+      }
+      return updated;
+    });
+  };
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -1665,18 +1697,18 @@ function AgreementFormModal({
             mutation.mutate();
           }}
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs font-bold text-slate-700">Tenant Resident *</Label>
               <Select
                 required
                 value={form.tenantId}
-                onChange={(e) => setForm((f) => ({ ...f, tenantId: e.target.value }))}
+                onChange={(e) => handleTenantChange(e.target.value)}
                 className="h-10 rounded-xl border-slate-300 font-medium"
               >
                 <option value="">Select Tenant</option>
                 {tenants.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name} ({t.phone})</option>
+                  <option key={t.id} value={t.id}>{t.name} · {t.phone}</option>
                 ))}
               </Select>
             </div>
@@ -1686,12 +1718,12 @@ function AgreementFormModal({
               <Select
                 required
                 value={form.propertyId}
-                onChange={(e) => setForm((f) => ({ ...f, propertyId: e.target.value }))}
+                onChange={(e) => handlePropertyChange(e.target.value)}
                 className="h-10 rounded-xl border-slate-300 font-medium"
               >
                 <option value="">Select Property</option>
                 {properties.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.type})</option>
+                  <option key={p.id} value={p.id}>{p.name} ({formatPropertyType(p.type)}){p.city ? ` · ${p.city}` : ""}</option>
                 ))}
               </Select>
             </div>
