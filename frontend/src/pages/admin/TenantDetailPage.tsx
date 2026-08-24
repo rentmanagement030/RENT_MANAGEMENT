@@ -57,6 +57,7 @@ import { EmptyState, KycStatusBadge, StatusBadge } from "@/components/ui/data";
 import { ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
 import FileViewer from "@/components/FileViewer";
+import { validateName, validatePhone, validateEmail, validateAadhaar, formatAadhaarInput } from "@/lib/validation";
 import type { FamilyMember, Tenant, TenantDocument } from "@/types";
 
 // Official WhatsApp SVG Logo Icon
@@ -1179,7 +1180,21 @@ function FamilyMemberDialog({
     onError: (e) => toastError("Failed", e instanceof Error ? e.message : undefined),
   });
 
-  const valid = name.trim().length > 0;
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateFamilyMember = (): boolean => {
+    const errs: Record<string, string> = {};
+    const nameErr = validateName(name, true, "Full Name");
+    if (nameErr) errs.name = nameErr;
+
+    if (phone) {
+      const phoneErr = validatePhone(phone, false, "Phone Number");
+      if (phoneErr) errs.phone = phoneErr;
+    }
+
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -1191,7 +1206,18 @@ function FamilyMemberDialog({
         <div className="grid gap-3.5 text-xs">
           <div className="space-y-1">
             <Label className="text-xs font-bold text-slate-700">Full Name *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Meena Kumar" className="h-10 rounded-xl border-slate-300 font-bold" />
+            <Input
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: "" }));
+              }}
+              placeholder="e.g. Meena Kumar"
+              className={cn("h-10 rounded-xl border-slate-300 font-bold", fieldErrors.name && "border-rose-500")}
+            />
+            {fieldErrors.name && (
+              <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.name}</p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -1211,7 +1237,18 @@ function FamilyMemberDialog({
           </div>
           <div className="space-y-1">
             <Label className="text-xs font-bold text-slate-700">Phone</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" className="h-10 rounded-xl border-slate-300" />
+            <Input
+              value={phone}
+              onChange={(e) => {
+                setPhone(e.target.value);
+                if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: "" }));
+              }}
+              placeholder="Optional"
+              className={cn("h-10 rounded-xl border-slate-300", fieldErrors.phone && "border-rose-500")}
+            />
+            {fieldErrors.phone && (
+              <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.phone}</p>
+            )}
           </div>
           <div className="space-y-1">
             <Label className="text-xs font-bold text-slate-700">Occupation</Label>
@@ -1228,7 +1265,15 @@ function FamilyMemberDialog({
         </div>
         <DialogFooter className="pt-2">
           <Button variant="outline" onClick={onClose} className="rounded-xl font-bold">Cancel</Button>
-          <Button disabled={!valid} loading={mutation.isPending} onClick={() => mutation.mutate()} className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl">
+          <Button
+            loading={mutation.isPending}
+            onClick={() => {
+              if (validateFamilyMember()) {
+                mutation.mutate();
+              }
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl"
+          >
             {member ? "Save Changes" : "Add Member"}
           </Button>
         </DialogFooter>

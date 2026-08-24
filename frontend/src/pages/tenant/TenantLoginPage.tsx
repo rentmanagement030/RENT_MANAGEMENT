@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Phone, ArrowRight, Building2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { validatePhone } from "@/lib/validation";
 import { useToast } from "@/components/ui/toast";
 import { Button, Card, CardContent, Input, Label } from "@/components/ui/primitives";
 
@@ -14,7 +15,12 @@ export default function TenantLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.phone || !form.password) {
-      toastError("Please enter your Phone Number and Password/PIN");
+      toastError("Validation Error", "Please enter your Phone Number and Password/PIN");
+      return;
+    }
+    const phoneErr = validatePhone(form.phone, true, "Phone Number");
+    if (phoneErr) {
+      toastError("Invalid Phone", phoneErr);
       return;
     }
 

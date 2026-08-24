@@ -25,6 +25,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Input, PageLoader } f
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
 import FileViewer from "@/components/FileViewer";
+import { validateName } from "@/lib/validation";
 
 function formatAgreementNo(agreementNumber?: string | null, id?: string): string {
   if (!agreementNumber) return id ? `AGR-${id.slice(-6).toUpperCase()}` : "AGR-—";
@@ -148,9 +149,12 @@ export default function PublicAgreementSignPage() {
       return;
     }
 
-    if (activeTab === "TYPE" && !typedName.trim()) {
-      toastError("Action Required", "Please type your full legal name.");
-      return;
+    if (activeTab === "TYPE") {
+      const nameErr = validateName(typedName, true, "Full legal name");
+      if (nameErr) {
+        toastError("Invalid Name", nameErr);
+        return;
+      }
     }
 
     setConfirmModalOpen(true);

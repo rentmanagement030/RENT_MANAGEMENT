@@ -11,6 +11,8 @@ import { Badge, Button, Card, CardContent, Input, Label, PageLoader, Select } fr
 import { EmptyState, PageHeader, Pagination, StatusBadge } from "@/components/ui/data";
 import { ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
+import { cn } from "@/lib/utils";
+import { validateName, validatePhone, validateEmail } from "@/lib/validation";
 import type { RoleInfo, User } from "@/types";
 
 export default function UsersPage() {
@@ -235,6 +237,25 @@ function UserFormDialog({
     }));
   };
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateUserForm = (): boolean => {
+    const errs: Record<string, string> = {};
+    const nameErr = validateName(form.name, true, "Full Name");
+    if (nameErr) errs.name = nameErr;
+
+    const emailErr = validateEmail(form.email, true, "Email Address");
+    if (emailErr) errs.email = emailErr;
+
+    if (form.phone) {
+      const phoneErr = validatePhone(form.phone, false, "Phone Number");
+      if (phoneErr) errs.phone = phoneErr;
+    }
+
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const mutation = useMutation({
     mutationFn: () => {
       const base = {
@@ -272,20 +293,56 @@ function UserFormDialog({
           className="grid gap-4 sm:grid-cols-2"
           onSubmit={(e) => {
             e.preventDefault();
-            mutation.mutate();
+            if (validateUserForm()) {
+              mutation.mutate();
+            }
           }}
         >
           <div className="space-y-1.5">
             <Label>Full name *</Label>
-            <Input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+            <Input
+              required
+              value={form.name}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, name: e.target.value }));
+                if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: "" }));
+              }}
+              className={cn(fieldErrors.name && "border-rose-500")}
+            />
+            {fieldErrors.name && (
+              <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.name}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Email *</Label>
-            <Input required type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+            <Input
+              required
+              type="email"
+              value={form.email}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, email: e.target.value }));
+                if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: "" }));
+              }}
+              className={cn(fieldErrors.email && "border-rose-500")}
+            />
+            {fieldErrors.email && (
+              <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.email}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Phone</Label>
-            <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+            <Input
+              value={form.phone}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, phone: e.target.value }));
+                if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: "" }));
+              }}
+              placeholder="e.g. 9876543210"
+              className={cn(fieldErrors.phone && "border-rose-500")}
+            />
+            {fieldErrors.phone && (
+              <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.phone}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>{user ? "Reset password" : "Password *"}</Label>

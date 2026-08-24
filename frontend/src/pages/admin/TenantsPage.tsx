@@ -39,6 +39,7 @@ import { EmptyState, Pagination, StatusBadge } from "@/components/ui/data";
 import { ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
 import { TransferTenantModal } from "./TenantDetailPage";
+import { validateName, validatePhone, validateEmail, validateAadhaar, formatAadhaarInput } from "@/lib/validation";
 import type { Property, Tenant } from "@/types";
 
 // Official WhatsApp SVG Logo Icon & Normalizer
@@ -1899,6 +1900,40 @@ function TenantFormDialog({
     }));
   };
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const errs: Record<string, string> = {};
+    const nameErr = validateName(form.name, true, "Full Name");
+    if (nameErr) errs.name = nameErr;
+
+    const phoneErr = validatePhone(form.phone, true, "Phone Number");
+    if (phoneErr) errs.phone = phoneErr;
+
+    if (form.email) {
+      const emailErr = validateEmail(form.email, false, "Email Address");
+      if (emailErr) errs.email = emailErr;
+    }
+
+    if (form.aadhaarNumber) {
+      const aadhaarErr = validateAadhaar(form.aadhaarNumber, false, "Aadhaar Number");
+      if (aadhaarErr) errs.aadhaarNumber = aadhaarErr;
+    }
+
+    if (form.emergencyName) {
+      const emNameErr = validateName(form.emergencyName, false, "Emergency Contact Name");
+      if (emNameErr) errs.emergencyName = emNameErr;
+    }
+
+    if (form.emergencyPhone) {
+      const emPhoneErr = validatePhone(form.emergencyPhone, false, "Emergency Phone");
+      if (emPhoneErr) errs.emergencyPhone = emPhoneErr;
+    }
+
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const mutation = useMutation({
     mutationFn: () => {
       const body = {
@@ -1948,7 +1983,9 @@ function TenantFormDialog({
           className="space-y-5 pt-3 overflow-y-auto max-h-[calc(90vh-130px)] pr-1.5 scrollbar-thin"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!unitDupError) mutation.mutate();
+            if (validateForm() && !unitDupError) {
+              mutation.mutate();
+            }
           }}
         >
           {/* Unit Duplicate / Occupied Error */}
@@ -1969,10 +2006,16 @@ function TenantFormDialog({
               <Input
                 required
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, name: e.target.value }));
+                  if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: "" }));
+                }}
                 placeholder="e.g. Santhosh M"
-                className="h-10 text-xs font-bold text-slate-900 bg-white"
+                className={cn("h-10 text-xs font-bold text-slate-900 bg-white", fieldErrors.name && "border-rose-500 focus-visible:ring-rose-500")}
               />
+              {fieldErrors.name && (
+                <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.name}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1981,13 +2024,20 @@ function TenantFormDialog({
                 <Input
                   required
                   value={form.phone}
-                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, phone: e.target.value }));
+                    if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: "" }));
+                  }}
                   placeholder="+91 90000 00000"
-                  className="h-10 text-xs font-bold bg-white"
+                  className={cn("h-10 text-xs font-bold bg-white", fieldErrors.phone && "border-rose-500 focus-visible:ring-rose-500")}
                 />
-                <p className="text-[10px] text-slate-500 font-medium pt-0.5">
-                  Used for payment receipts & automated WhatsApp rent reminders.
-                </p>
+                {fieldErrors.phone ? (
+                  <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.phone}</p>
+                ) : (
+                  <p className="text-[10px] text-slate-500 font-medium pt-0.5">
+                    Used for payment receipts & automated WhatsApp rent reminders.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -1995,10 +2045,16 @@ function TenantFormDialog({
                 <Input
                   type="email"
                   value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, email: e.target.value }));
+                    if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: "" }));
+                  }}
                   placeholder="e.g. tenant@example.com"
-                  className="h-10 text-xs font-semibold bg-white"
+                  className={cn("h-10 text-xs font-semibold bg-white", fieldErrors.email && "border-rose-500 focus-visible:ring-rose-500")}
                 />
+                {fieldErrors.email && (
+                  <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.email}</p>
+                )}
               </div>
             </div>
           </div>
@@ -2150,10 +2206,16 @@ function TenantFormDialog({
                   <Label className="text-[11px] font-bold text-slate-700">Aadhaar / KYC Number</Label>
                   <Input
                     value={form.aadhaarNumber}
-                    onChange={(e) => setForm((f) => ({ ...f, aadhaarNumber: e.target.value }))}
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, aadhaarNumber: formatAadhaarInput(e.target.value) }));
+                      if (fieldErrors.aadhaarNumber) setFieldErrors((prev) => ({ ...prev, aadhaarNumber: "" }));
+                    }}
                     placeholder="e.g. 1234 5678 9012"
-                    className="h-9 text-xs font-semibold bg-slate-50"
+                    className={cn("h-9 text-xs font-semibold bg-slate-50", fieldErrors.aadhaarNumber && "border-rose-500")}
                   />
+                  {fieldErrors.aadhaarNumber && (
+                    <p className="text-[10px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.aadhaarNumber}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-2">
@@ -2161,19 +2223,31 @@ function TenantFormDialog({
                     <Label className="text-[11px] font-bold text-slate-700">Emergency Contact Name</Label>
                     <Input
                       value={form.emergencyName}
-                      onChange={(e) => setForm((f) => ({ ...f, emergencyName: e.target.value }))}
+                      onChange={(e) => {
+                        setForm((f) => ({ ...f, emergencyName: e.target.value }));
+                        if (fieldErrors.emergencyName) setFieldErrors((prev) => ({ ...prev, emergencyName: "" }));
+                      }}
                       placeholder="e.g. Parent / Spouse Name"
-                      className="h-9 text-xs bg-slate-50"
+                      className={cn("h-9 text-xs bg-slate-50", fieldErrors.emergencyName && "border-rose-500")}
                     />
+                    {fieldErrors.emergencyName && (
+                      <p className="text-[10px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.emergencyName}</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[11px] font-bold text-slate-700">Emergency Phone</Label>
                     <Input
                       value={form.emergencyPhone}
-                      onChange={(e) => setForm((f) => ({ ...f, emergencyPhone: e.target.value }))}
+                      onChange={(e) => {
+                        setForm((f) => ({ ...f, emergencyPhone: e.target.value }));
+                        if (fieldErrors.emergencyPhone) setFieldErrors((prev) => ({ ...prev, emergencyPhone: "" }));
+                      }}
                       placeholder="+91 90000 00000"
-                      className="h-9 text-xs bg-slate-50"
+                      className={cn("h-9 text-xs bg-slate-50", fieldErrors.emergencyPhone && "border-rose-500")}
                     />
+                    {fieldErrors.emergencyPhone && (
+                      <p className="text-[10px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.emergencyPhone}</p>
+                    )}
                   </div>
                 </div>
 

@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/primitives";
 import { EmptyState, PageHeader, Pagination, StatusBadge } from "@/components/ui/data";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/overlay";
+import { cn } from "@/lib/utils";
+import { validateName, validatePhone, validateEmail } from "@/lib/validation";
 import type { Lead, Property } from "@/types";
 
 export default function LeadsPage() {
@@ -330,6 +332,16 @@ export default function LeadsPage() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                const errs: Record<string, string> = {};
+                const nameErr = validateName(leadForm.name, true, "Name");
+                if (nameErr) errs.name = nameErr;
+                const phoneErr = validatePhone(leadForm.phone, true, "Phone");
+                if (phoneErr) errs.phone = phoneErr;
+
+                if (Object.keys(errs).length > 0) {
+                  toastError("Validation Error", Object.values(errs)[0]);
+                  return;
+                }
                 createLeadMutation.mutate();
               }}
               className="space-y-4 pt-2"
@@ -337,11 +349,22 @@ export default function LeadsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Name *</Label>
-                  <Input required placeholder="Full Name" value={leadForm.name} onChange={(e) => setLeadForm((f) => ({ ...f, name: e.target.value }))} />
+                  <Input
+                    required
+                    placeholder="Full Name"
+                    value={leadForm.name}
+                    onChange={(e) => setLeadForm((f) => ({ ...f, name: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Phone *</Label>
-                  <Input required type="tel" placeholder="Mobile Number" value={leadForm.phone} onChange={(e) => setLeadForm((f) => ({ ...f, phone: e.target.value }))} />
+                  <Input
+                    required
+                    type="tel"
+                    placeholder="e.g. 9876543210"
+                    value={leadForm.phone}
+                    onChange={(e) => setLeadForm((f) => ({ ...f, phone: e.target.value }))}
+                  />
                 </div>
               </div>
 

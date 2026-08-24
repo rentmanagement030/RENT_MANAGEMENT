@@ -6,6 +6,8 @@ import { useToast } from "@/components/ui/toast";
 import { Button, Card, CardContent, Input, Label, PageLoader, Select } from "@/components/ui/primitives";
 import { PageHeader, StatusBadge } from "@/components/ui/data";
 import { ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/overlay";
+import { cn } from "@/lib/utils";
+import { validateName, validatePhone, validateEmail } from "@/lib/validation";
 import type { Staff, Vendor } from "@/types";
 
 export default function StaffVendorPage() {
@@ -394,6 +396,24 @@ function StaffFormDialog({
     role: staff?.role ?? "CARETAKER",
     propertyIds: staff?.properties ? staff.properties.map((p) => p.id) : [],
   }));
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateStaffForm = (): boolean => {
+    const errs: Record<string, string> = {};
+    const nameErr = validateName(form.name, true, "Full Name");
+    if (nameErr) errs.name = nameErr;
+
+    const phoneErr = validatePhone(form.phone, true, "Phone Number");
+    if (phoneErr) errs.phone = phoneErr;
+
+    if (form.email) {
+      const emailErr = validateEmail(form.email, false, "Email Address");
+      if (emailErr) errs.email = emailErr;
+    }
+
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const mutation = useMutation({
     mutationFn: () => (staff ? api.updateStaff(staff.id, form) : api.createStaff(form)),
@@ -421,17 +441,43 @@ function StaffFormDialog({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            mutation.mutate();
+            if (validateStaffForm()) {
+              mutation.mutate();
+            }
           }}
           className="space-y-4 pt-2"
         >
           <div className="space-y-1.5">
             <Label>Full Name *</Label>
-            <Input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="h-11 font-bold rounded-xl border-slate-300" />
+            <Input
+              required
+              value={form.name}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, name: e.target.value }));
+                if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: "" }));
+              }}
+              className={cn("h-11 font-bold rounded-xl border-slate-300", fieldErrors.name && "border-rose-500")}
+            />
+            {fieldErrors.name && (
+              <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.name}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Phone Number *</Label>
-            <Input required type="tel" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} className="h-11 font-bold rounded-xl border-slate-300" />
+            <Input
+              required
+              type="tel"
+              value={form.phone}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, phone: e.target.value }));
+                if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: "" }));
+              }}
+              placeholder="e.g. 9876543210"
+              className={cn("h-11 font-bold rounded-xl border-slate-300", fieldErrors.phone && "border-rose-500")}
+            />
+            {fieldErrors.phone && (
+              <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.phone}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Role *</Label>
@@ -463,7 +509,7 @@ function StaffFormDialog({
               Cancel
             </Button>
             <Button type="submit" loading={mutation.isPending} className="bg-blue-600 hover:bg-blue-700 font-extrabold rounded-xl shadow-xs">
-              {staff ? "Save Staff Profile" : "Save Staff"}
+              {staff ? "Save Changes" : "Create Staff Member"}
             </Button>
           </DialogFooter>
         </form>
@@ -494,6 +540,19 @@ function VendorFormDialog({
     address: vendor?.address ?? "",
     propertyIds: vendor?.properties ? vendor.properties.map((p) => p.id) : [],
   }));
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateVendorForm = (): boolean => {
+    const errs: Record<string, string> = {};
+    const nameErr = validateName(form.name, true, "Vendor Name");
+    if (nameErr) errs.name = nameErr;
+
+    const phoneErr = validatePhone(form.phone, true, "Phone Number");
+    if (phoneErr) errs.phone = phoneErr;
+
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const mutation = useMutation({
     mutationFn: () => (vendor ? api.updateVendor(vendor.id, form) : api.createVendor(form)),
@@ -521,17 +580,43 @@ function VendorFormDialog({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            mutation.mutate();
+            if (validateVendorForm()) {
+              mutation.mutate();
+            }
           }}
           className="space-y-4 pt-2"
         >
           <div className="space-y-1.5">
             <Label>Vendor Name *</Label>
-            <Input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="h-11 font-bold rounded-xl border-slate-300" />
+            <Input
+              required
+              value={form.name}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, name: e.target.value }));
+                if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: "" }));
+              }}
+              className={cn("h-11 font-bold rounded-xl border-slate-300", fieldErrors.name && "border-rose-500")}
+            />
+            {fieldErrors.name && (
+              <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.name}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Phone Number *</Label>
-            <Input required type="tel" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} className="h-11 font-bold rounded-xl border-slate-300" />
+            <Input
+              required
+              type="tel"
+              value={form.phone}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, phone: e.target.value }));
+                if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: "" }));
+              }}
+              placeholder="e.g. 9876543210"
+              className={cn("h-11 font-bold rounded-xl border-slate-300", fieldErrors.phone && "border-rose-500")}
+            />
+            {fieldErrors.phone && (
+              <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.phone}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Service Type *</Label>
@@ -568,7 +653,7 @@ function VendorFormDialog({
               Cancel
             </Button>
             <Button type="submit" loading={mutation.isPending} className="bg-blue-600 hover:bg-blue-700 font-extrabold rounded-xl shadow-xs">
-              {vendor ? "Save Vendor Profile" : "Save Vendor"}
+              {vendor ? "Save Changes" : "Create Vendor"}
             </Button>
           </DialogFooter>
         </form>

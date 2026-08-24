@@ -2,24 +2,45 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { validateName, validatePhone, validateEmail } from "@/lib/validation";
 import { Button, Input, Label, Textarea } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
 
 export default function ContactPage() {
   const { success, error } = useToast();
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const errs: Record<string, string> = {};
+    const nameErr = validateName(form.name, true, "Full Name");
+    if (nameErr) errs.name = nameErr;
+
+    const phoneErr = validatePhone(form.phone, true, "Phone Number");
+    if (phoneErr) errs.phone = phoneErr;
+
+    const emailErr = validateEmail(form.email, true, "Email Address");
+    if (emailErr) errs.email = emailErr;
+
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const mutation = useMutation({
     mutationFn: () => api.publicContact(form),
     onSuccess: () => {
       success("Message sent", "We will get back to you within 24 hours.");
       setForm({ name: "", email: "", phone: "", message: "" });
+      setFieldErrors({});
     },
     onError: (e) => error("Failed to send", e instanceof Error ? e.message : undefined),
   });
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((f) => ({ ...f, [k]: e.target.value }));
+    if (fieldErrors[k]) setFieldErrors((prev) => ({ ...prev, [k]: "" }));
+  };
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -34,28 +55,62 @@ export default function ContactPage() {
             className="space-y-5 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm"
             onSubmit={(e) => {
               e.preventDefault();
-              mutation.mutate();
+              if (validateForm()) {
+                mutation.mutate();
+              }
             }}
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="name">Full Name *</Label>
-                <Input id="name" required value={form.name} onChange={set("name")} placeholder="Your name" />
+                <Input
+                  id="name"
+                  required
+                  value={form.name}
+                  onChange={set("name")}
+                  placeholder="Your name"
+                  className={cn(fieldErrors.name && "border-rose-500")}
+                />
+                {fieldErrors.name && (
+                  <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.name}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone Number *</Label>
-                <Input id="phone" required value={form.phone} onChange={set("phone")} placeholder="+91 90000 00000" />
+                <Input
+                  id="phone"
+                  required
+                  type="tel"
+                  value={form.phone}
+                  onChange={set("phone")}
+                  placeholder="e.g. 9876543210"
+                  className={cn(fieldErrors.phone && "border-rose-500")}
+                />
+                {fieldErrors.phone && (
+                  <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.phone}</p>
+                )}
               </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="email">Email Address *</Label>
-              <Input id="email" type="email" required value={form.email} onChange={set("email")} placeholder="you@example.com" />
+              <Input
+                id="email"
+                type="email"
+                required
+                value={form.email}
+                onChange={set("email")}
+                placeholder="you@example.com"
+                className={cn(fieldErrors.email && "border-rose-500")}
+              />
+              {fieldErrors.email && (
+                <p className="text-[11px] font-bold text-rose-600 animate-in fade-in">{fieldErrors.email}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="message">Message *</Label>
               <Textarea id="message" required value={form.message} onChange={set("message")} placeholder="Tell us what property or service you need..." />
             </div>
-            <Button type="submit" size="lg" className="w-full font-bold" loading={mutation.isPending}>
+            <Button type="submit" size="lg" className="w-full font-bold bg-blue-600 hover:bg-blue-700" loading={mutation.isPending}>
               Send Message
             </Button>
           </form>
