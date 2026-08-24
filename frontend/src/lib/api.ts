@@ -82,10 +82,11 @@ function messageWithDetails(base: string, details?: unknown): string {
 }
 
 const AUTH_TOKEN_KEY = "rm_auth_token";
+const TENANT_TOKEN_KEY = "c2d_tenant_token";
 
 export function getAuthToken(): string | null {
   try {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
+    return localStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem(TENANT_TOKEN_KEY);
   } catch {
     return null;
   }
@@ -102,6 +103,31 @@ export function setAuthToken(token: string): void {
 export function clearAuthToken(): void {
   try {
     localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(TENANT_TOKEN_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export function getTenantToken(): string | null {
+  try {
+    return localStorage.getItem(TENANT_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setTenantToken(token: string): void {
+  try {
+    localStorage.setItem(TENANT_TOKEN_KEY, token);
+  } catch {
+    // ignore
+  }
+}
+
+export function clearTenantToken(): void {
+  try {
+    localStorage.removeItem(TENANT_TOKEN_KEY);
   } catch {
     // ignore
   }
@@ -382,9 +408,25 @@ export const api = {
   updateLeaveStatus: (id: string, body: { status: string; notes?: string }) => request<TenantLeave>(`/pg/leaves/${id}/status`, { method: "PATCH", body: JSON.stringify(body) }),
 
   // ---- Tenant Portal ----
-  tenantLogin: (body: { phone: string; password: string }) => request<{ success: boolean; token: string; tenant: Tenant }>("/tenant-auth/login", { method: "POST", body: JSON.stringify(body) }),
-  tenantMe: () => request<{ success: boolean; tenant: Tenant }>("/tenant-auth/me"),
-  changeTenantPassword: (body: { currentPassword: string; newPassword: string }) => request<{ success: boolean }>("/tenant-auth/change-password", { method: "POST", body: JSON.stringify(body) }),
+  tenantLogin: (body: { phone: string; password: string }) =>
+    request<{ success: boolean; token: string; tenant: Tenant }>("/tenant-auth/login", { method: "POST", body: JSON.stringify(body) }).then((r) => {
+      if (r.token) setTenantToken(r.token);
+      return r;
+    }),
+  tenantMe: () =>
+    request<{
+      success: boolean;
+      tenant: Tenant;
+      ledger: any;
+      payments: any[];
+      rentRecords: RentRecord[];
+      bills: Bill[];
+      maintenance: MaintenanceRequest[];
+    }>("/tenant-auth/me"),
+  tenantCreateMaintenance: (body: { description: string }) =>
+    request<{ success: boolean; item: MaintenanceRequest }>("/tenant-auth/maintenance", { method: "POST", body: JSON.stringify(body) }),
+  changeTenantPassword: (body: { currentPassword: string; newPassword: string }) =>
+    request<{ success: boolean }>("/tenant-auth/change-password", { method: "POST", body: JSON.stringify(body) }),
 
   // ---- Multi-Unit Homes ----
   listHomesByProperty: (propertyId: string) =>

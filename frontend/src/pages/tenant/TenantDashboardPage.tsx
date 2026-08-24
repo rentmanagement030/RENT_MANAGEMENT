@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,8 +15,9 @@ import {
   Wallet,
   ArrowDownRight,
   ArrowUpRight,
+  Home,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, getTenantToken, clearTenantToken } from "@/lib/api";
 import { formatINR, formatDate } from "@/lib/format";
 import { useToast } from "@/components/ui/toast";
 import { Button, Card, CardContent, CardHeader, CardTitle, PageLoader, Input, Label } from "@/components/ui/primitives";
@@ -35,40 +36,30 @@ export default function TenantDashboardPage() {
   const [lightboxImages, setLightboxImages] = useState<LightboxImage[]>([]);
   const [selectedReceipt, setSelectedReceipt] = useState<any | null>(null);
 
-  // Fetch tenant profile & stay details + ledger + payment history
+  const token = getTenantToken();
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/tenant/login", { replace: true });
+    }
+  }, [token, navigate]);
+
+  // Fetch tenant profile & stay details + ledger + payment history + rent records + maintenance
   const { data: meData, isLoading: meLoading } = useQuery({
     queryKey: ["tenantMe"],
-    queryFn: async () => {
-      const token = localStorage.getItem("c2d_tenant_token");
-      if (!token) throw new Error("No token");
-      const res = await fetch("/api/tenant-auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Unauthorized");
-      return res.json();
-    },
+    enabled: !!token,
+    queryFn: () => api.tenantMe(),
+    retry: false,
   });
 
   const tenant = meData?.tenant;
   const ledger = meData?.ledger;
   const paymentsList = meData?.payments ?? [];
-
-  // Fetch tenant rent records
-  const { data: rentData } = useQuery({
-    queryKey: ["tenantRent", tenant?.id],
-    enabled: !!tenant?.id,
-    queryFn: () => api.listRent({ tenantId: tenant.id }),
-  });
-
-  // Fetch tenant maintenance requests
-  const { data: maintenanceData } = useQuery({
-    queryKey: ["tenantMaintenance", tenant?.id],
-    enabled: !!tenant?.id,
-    queryFn: () => api.listMaintenance({ tenantId: tenant.id }),
-  });
+  const rentRecords = meData?.rentRecords ?? [];
+  const maintenanceList = meData?.maintenance ?? [];
 
   const handleLogout = () => {
-    localStorage.removeItem("c2d_tenant_token");
+    clearTenantToken();
     navigate("/tenant/login");
   };
 
@@ -95,7 +86,6 @@ export default function TenantDashboardPage() {
           handler: function () {
             success("Payment Authorized", "Processing confirmation...");
             qc.invalidateQueries({ queryKey: ["tenantMe"] });
-            qc.invalidateQueries({ queryKey: ["tenantRent"] });
           },
           prefill: {
             name: tenant.name,
@@ -115,23 +105,21 @@ export default function TenantDashboardPage() {
   };
 
   const createMaintenanceMutation = useMutation({
-    mutationFn: () => api.createMaintenance({ propertyId: tenant.propertyId, tenantId: tenant.id, description: maintenanceForm.description }),
+    mutationFn: () => api.tenantCreateMaintenance({ description: maintenanceForm.description }),
     onSuccess: () => {
       success("Request Submitted", "Property manager notified.");
       setRaisingMaintenance(false);
       setMaintenanceForm({ description: "" });
-      qc.invalidateQueries({ queryKey: ["tenantMaintenance"] });
+      qc.invalidateQueries({ queryKey: ["tenantMe"] });
     },
     onError: (e) => toastError("Failed", e instanceof Error ? e.message : undefined),
   });
 
   if (meLoading) return <PageLoader label="Loading Tenant Dashboard..." />;
   if (!tenant) {
-    navigate("/tenant/login");
     return null;
   }
 
-  const rentRecords = rentData?.items ?? [];
   const pendingRecords = rentRecords.filter((r) => Number(r.outstanding) > 0);
   const totalOutstanding = ledger?.outstanding ?? pendingRecords.reduce((sum, r) => sum + Number(r.outstanding), 0);
   const creditBalance = ledger?.tenantCreditBalance ?? 0;
@@ -223,9 +211,15 @@ export default function TenantDashboardPage() {
                 <span className="font-bold text-slate-800 text-sm truncate block">{tenant.property?.name ?? "—"}</span>
               </div>
               <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
-                <span className="text-slate-400 text-[10px] uppercase font-extrabold block">Room / Bed</span>
+                <span className="text-slate-400 text-[10px] uppercase font-extrabold block">
+                  {(tenant as any).home ? "Unit / Home" : "Room / Bed"}
+                </span>
                 <span className="font-bold text-slate-800 text-sm block">
-                  {tenant.room ? `Room ${tenant.room.roomNumber}` : "—"} {tenant.bed ? `(Bed ${tenant.bed.bedNumber})` : ""}
+                  {(tenant as any).home
+                    ? `${(tenant as any).home.floor ? (tenant as any).home.floor + " · " : ""}${(tenant as any).home.homeNumber || (tenant as any).home.name || "Home"}`
+                    : tenant.room
+                    ? `Room ${tenant.room.roomNumber} ${tenant.bed ? `(Bed ${tenant.bed.bedNumber})` : ""}`
+                    : "Entire Property"}
                 </span>
               </div>
               <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
@@ -335,11 +329,11 @@ export default function TenantDashboardPage() {
             </Button>
           </CardHeader>
           <CardContent className="p-0">
-            {!(maintenanceData?.items?.length) ? (
+            {!maintenanceList.length ? (
               <div className="p-6 text-center text-xs font-bold text-slate-500">No active maintenance requests.</div>
             ) : (
               <ul className="divide-y divide-slate-100">
-                {maintenanceData.items.map((m) => (
+                {maintenanceList.map((m: any) => (
                   <li key={m.id} className="p-4 space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="font-extrabold text-xs text-slate-900">{m.description}</span>
