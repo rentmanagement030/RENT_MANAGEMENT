@@ -193,12 +193,26 @@ export default function PropertyDetailAdminPage() {
     ? "PG / Hostel"
     : "Single House";
 
-  const homesList: PropertyHome[] = (property.homes || []).map((h: any) => {
-    const activeTenant =
+  const activeTenantsList = (property.tenants || []).filter((t: any) => t.status === "ACTIVE" || !t.status);
+
+  const homesList: PropertyHome[] = (property.homes || []).map((h: any, idx: number) => {
+    let activeTenant =
       (property.tenants || []).find((t: any) => t.homeId === h.id || t.home?.id === h.id) ||
       (Array.isArray(h.tenants) && h.tenants.length > 0 ? h.tenants[0] : null) ||
       h.activeTenant ||
       null;
+
+    // Fallback: If tenant is in property but homeId was unlinked, pair with matching rent or available home
+    if (!activeTenant && activeTenantsList.length > 0) {
+      const unassignedTenant = activeTenantsList.find((t: any) => {
+        const hasOtherHome = (property.homes || []).some((other: any) => other.id === t.homeId && other.id !== h.id);
+        return !hasOtherHome && (Number(t.rent) === Number(h.rent) || idx === 0);
+      });
+      if (unassignedTenant) {
+        activeTenant = unassignedTenant;
+      }
+    }
+
     const isOccupied = h.status === "OCCUPIED" || Boolean(activeTenant);
     return {
       ...h,
@@ -221,17 +235,22 @@ export default function PropertyDetailAdminPage() {
   const displayMonthlyRent = isMultiUnit && totalHomesCount > 0 ? totalHomesPotentialRent : Number(property.rent || 0);
   const displayTotalDeposit = isMultiUnit && totalHomesCount > 0 ? totalHomesDeposit : Number(property.deposit || 0);
 
-  const occupiedHomesCount = homesList.filter((h) => h.status === "OCCUPIED" || h.activeTenant).length;
-  const availableHomesCount = homesList.filter((h) => h.status === "AVAILABLE" && !h.activeTenant).length;
+  const occupiedHomesCount = Math.max(
+    homesList.filter((h) => h.status === "OCCUPIED" || h.activeTenant).length,
+    isMultiUnit ? activeTenantsList.length : 0
+  );
+  const availableHomesCount = Math.max(0, totalHomesCount - occupiedHomesCount);
   const maintenanceHomesCount = homesList.filter((h) => h.status === "MAINTENANCE").length;
 
   const roomTotal = property.roomCounts?.total || 0;
   const occupancyRate = isMultiUnit
     ? totalHomesCount > 0
-      ? Math.round((occupiedHomesCount / totalHomesCount) * 100)
+      ? Math.min(100, Math.round((occupiedHomesCount / totalHomesCount) * 100))
       : 0
     : roomTotal > 0
     ? Math.round(((property.roomCounts?.occupied || 0) / roomTotal) * 100)
+    : activeTenantsList.length > 0
+    ? 100
     : 0;
 
   return (
@@ -732,8 +751,11 @@ export default function PropertyDetailAdminPage() {
                   <ul className="divide-y divide-slate-100">
                     {property.tenants.map((t: any) => {
                       const phone = t.phone || t.contactNumber;
-                      const unitBadge = t.home
-                        ? `${t.home.homeNumber} (${t.home.floor || "Home"})`
+                      const assignedHome =
+                        t.home ||
+                        homesList.find((h) => h.id === t.homeId || h.activeTenant?.id === t.id);
+                      const unitBadge = assignedHome
+                        ? `${assignedHome.homeNumber} (${assignedHome.floor || "Unit"})`
                         : t.room
                         ? `Room ${t.room.roomNumber}${t.bed ? ` / Bed ${t.bed.bedNumber}` : ""}`
                         : property.type === "HOUSE"

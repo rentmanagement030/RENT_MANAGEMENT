@@ -61,6 +61,24 @@ export async function ensureRolesAndPermissions() {
     data: { publicVisibility: true },
   });
 
+  // Auto-heal any active tenants without homeId on multi-unit properties
+  const unlinkedTenants = await prisma.tenant.findMany({
+    where: { status: "ACTIVE", homeId: null },
+    include: { property: { include: { homes: true } } },
+  });
+  for (const t of unlinkedTenants) {
+    if (t.property && t.property.homes && t.property.homes.length > 0) {
+      const matchingHome =
+        t.property.homes.find((h) => Number(h.rent) === Number(t.rent) && h.status === "AVAILABLE") ||
+        t.property.homes.find((h) => h.status === "AVAILABLE") ||
+        t.property.homes[0];
+      if (matchingHome) {
+        await prisma.tenant.update({ where: { id: t.id }, data: { homeId: matchingHome.id } });
+        await prisma.propertyHome.update({ where: { id: matchingHome.id }, data: { status: "OCCUPIED" } });
+      }
+    }
+  }
+
   // Ensure homes with active tenants are marked OCCUPIED
   const occupiedHomes = await prisma.propertyHome.findMany({
     where: { tenants: { some: { status: "ACTIVE" } } },
