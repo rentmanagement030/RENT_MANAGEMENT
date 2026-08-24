@@ -38,7 +38,7 @@ export function PropertyCard({ property }: { property: PublicProperty }) {
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
         {img ? (
-          <img src={img} alt={property.name} loading="lazy" className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          <img src={img} alt={property.name} loading="lazy" decoding="async" className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
         ) : (
           <div className="flex size-full items-center justify-center bg-slate-100 text-slate-400">
             {property.type === "HOUSE" || property.type === "VILLA" ? <Home className="size-12" /> : <Building2 className="size-12" />}

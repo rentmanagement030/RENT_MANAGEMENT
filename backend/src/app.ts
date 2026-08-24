@@ -180,31 +180,36 @@ export function createApp(): Express {
   });
 
   // ------------------------------------------------------------
-  // Health check
+  // Health check & Load Balancer Probe (/health & /api/health)
   // ------------------------------------------------------------
 
-  app.get("/api/health", async (_req, res) => {
-    const { prisma } = await import(
-      "./config/prisma"
-    );
+  const healthHandler = async (_req: express.Request, res: express.Response) => {
+    const { prisma } = await import("./config/prisma");
 
     let database = "ok";
-
     try {
       await prisma.$queryRaw`SELECT 1`;
     } catch {
       database = "error";
     }
 
-    res
-      .status(database === "ok" ? 200 : 503)
-      .json({
-        success: database === "ok",
-        status: "ok",
-        database,
-        timestamp: new Date().toISOString(),
-      });
-  });
+    const isHealthy = database === "ok";
+    res.status(isHealthy ? 200 : 503).json({
+      success: isHealthy,
+      status: isHealthy ? "healthy" : "unhealthy",
+      database,
+      workerId: process.pid,
+      uptime: Math.floor(process.uptime()),
+      memory: {
+        rssMb: Math.round(process.memoryUsage().rss / (1024 * 1024)),
+        heapUsedMb: Math.round(process.memoryUsage().heapUsed / (1024 * 1024)),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  };
+
+  app.get("/health", healthHandler);
+  app.get("/api/health", healthHandler);
 
   // ------------------------------------------------------------
   // 404

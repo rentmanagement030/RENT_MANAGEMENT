@@ -124,7 +124,7 @@ export default function PropertyGallery({
             )}
             aria-label={`View photo ${i + 1}`}
           >
-            <img src={img.url} alt={`${alt} ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+            <img src={img.url} alt={`${alt} ${i + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               <span className="absolute left-1 top-1 rounded-md bg-blue-600 px-1.5 py-0.5 text-[9px] font-black text-white shadow-xs inline-flex items-center gap-0.5">
                 <Star className="size-2.5 text-amber-300 fill-amber-300" /> Cover
               </span>
