@@ -1,6 +1,6 @@
-import { forwardRef } from "react";
+import { forwardRef, useState, useRef, useEffect, useMemo } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, Check, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ---------- Button ----------
@@ -92,50 +92,333 @@ export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLab
   );
 }
 
-// ---------- Select (native, styled) ----------
+// ---------- Select (Custom SaaS UI with search, icons & popover) ----------
+interface ParsedOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+function parseSelectChildren(children: React.ReactNode): ParsedOption[] {
+  const options: ParsedOption[] = [];
+  React.Children.forEach(children, (child) => {
+    if (React.isValidElement(child)) {
+      if (child.type === "option") {
+        options.push({
+          value: String(child.props.value ?? ""),
+          label: String(child.props.children ?? child.props.value ?? ""),
+          disabled: Boolean(child.props.disabled),
+        });
+      } else if (child.type === "optgroup" && (child.props as any).children) {
+        React.Children.forEach((child.props as any).children, (sub) => {
+          if (React.isValidElement(sub) && sub.type === "option") {
+            options.push({
+              value: String(sub.props.value ?? ""),
+              label: String(sub.props.children ?? sub.props.value ?? ""),
+              disabled: Boolean(sub.props.disabled),
+            });
+          }
+        });
+      }
+    }
+  });
+  return options;
+}
+
 export function Select({
   className,
   children,
+  value,
+  defaultValue,
+  onChange,
+  disabled,
+  placeholder,
+  name,
+  id,
+  required,
   ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+}: {
+  icon?: any;
+  placeholder?: string;
+} & React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const options = useMemo(() => parseSelectChildren(children), [children]);
+
+  const currentValue = value !== undefined ? String(value) : (defaultValue !== undefined ? String(defaultValue) : (options[0]?.value ?? ""));
+  const selectedOption = options.find((o) => o.value === currentValue) || options[0];
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const filteredOptions = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q));
+  }, [options, query]);
+
+  const handleSelect = (val: string) => {
+    setIsOpen(false);
+    setQuery("");
+    if (onChange) {
+      const syntheticEvent = {
+        target: { value: val, name: name || id },
+        currentTarget: { value: val, name: name || id },
+        bubbles: true,
+      } as unknown as React.ChangeEvent<HTMLSelectElement>;
+      onChange(syntheticEvent);
+    }
+  };
+
   return (
-    <select
-      className={cn(
-        "flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-900 transition-colors focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation min-h-[44px] shadow-2xs",
-        className,
+    <div ref={containerRef} className="relative w-full">
+      <select
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        name={name}
+        id={id}
+        required={required}
+        value={currentValue}
+        onChange={onChange}
+        disabled={disabled}
+      >
+        {children}
+      </select>
+
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        className={cn(
+          "flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-900 transition-all hover:border-slate-300 focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/20 disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation min-h-[44px] shadow-2xs text-left cursor-pointer",
+          isOpen && "border-blue-600 ring-2 ring-blue-600/20",
+          className
+        )}
+      >
+        <span className={cn("truncate min-w-0 flex-1", !selectedOption && "text-slate-400 font-medium")}>
+          {selectedOption?.label || placeholder || "Select..."}
+        </span>
+        <ChevronDown className={cn("size-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2", isOpen && "rotate-180 text-blue-600")} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl max-h-64 overflow-hidden flex flex-col text-xs animate-in fade-in zoom-in-95 duration-150">
+          {options.length > 5 && (
+            <div className="p-1 mb-1 border-b border-slate-100 shrink-0">
+              <div className="relative">
+                <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search options..."
+                  className="w-full h-8 pl-8 pr-2.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="overflow-y-auto space-y-0.5 max-h-56 pr-0.5">
+            {filteredOptions.length === 0 ? (
+              <p className="p-3 text-center text-slate-400 font-medium italic">No matching options</p>
+            ) : (
+              filteredOptions.map((opt) => {
+                const isSelected = opt.value === currentValue;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={opt.disabled}
+                    onClick={() => handleSelect(opt.value)}
+                    className={cn(
+                      "flex w-full items-center justify-between px-3 py-2 rounded-xl text-left transition-all cursor-pointer text-xs",
+                      opt.disabled && "opacity-40 cursor-not-allowed",
+                      isSelected
+                        ? "bg-blue-50 text-blue-900 font-extrabold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-semibold"
+                    )}
+                  >
+                    <span className="truncate pr-2">{opt.label}</span>
+                    {isSelected && <Check className="size-3.5 text-blue-600 shrink-0" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
       )}
-      {...props}
-    >
-      {children}
-    </select>
+    </div>
   );
 }
 
-// ---------- FilterSelect (Professional SaaS Filter Control) ----------
+// ---------- FilterSelect (Professional SaaS Filter Control with custom UI) ----------
 export function FilterSelect({
   icon: Icon,
   className,
   children,
+  value,
+  defaultValue,
+  onChange,
+  disabled,
+  placeholder,
+  name,
+  id,
+  required,
   ...props
 }: {
   icon?: any;
+  placeholder?: string;
 } & React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const options = useMemo(() => parseSelectChildren(children), [children]);
+
+  const currentValue = value !== undefined ? String(value) : (defaultValue !== undefined ? String(defaultValue) : (options[0]?.value ?? ""));
+  const selectedOption = options.find((o) => o.value === currentValue) || options[0];
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const filteredOptions = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q));
+  }, [options, query]);
+
+  const handleSelect = (val: string) => {
+    setIsOpen(false);
+    setQuery("");
+    if (onChange) {
+      const syntheticEvent = {
+        target: { value: val, name: name || id },
+        currentTarget: { value: val, name: name || id },
+        bubbles: true,
+      } as unknown as React.ChangeEvent<HTMLSelectElement>;
+      onChange(syntheticEvent);
+    }
+  };
+
   return (
-    <div className="relative w-full">
-      {Icon && (
-        <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none z-10" />
-      )}
+    <div ref={containerRef} className="relative w-full">
       <select
-        className={cn(
-          "flex h-11 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 text-xs sm:text-sm font-extrabold text-slate-800 transition-all hover:bg-white hover:border-slate-300 focus-visible:border-blue-600 focus-visible:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/20 disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation min-h-[44px] shadow-2xs cursor-pointer",
-          Icon ? "pl-10 pr-9" : "pl-3.5 pr-9",
-          className
-        )}
-        {...props}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        name={name}
+        id={id}
+        required={required}
+        value={currentValue}
+        onChange={onChange}
+        disabled={disabled}
       >
         {children}
       </select>
-      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
+
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        className={cn(
+          "flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 text-xs sm:text-sm font-extrabold text-slate-800 transition-all hover:bg-white hover:border-slate-300 focus-visible:border-blue-600 focus-visible:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/20 disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation min-h-[44px] shadow-2xs cursor-pointer text-left",
+          Icon ? "pl-10 pr-3.5" : "pl-3.5 pr-3.5",
+          isOpen && "bg-white border-blue-600 ring-2 ring-blue-600/20",
+          className
+        )}
+      >
+        {Icon && (
+          <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none z-10" />
+        )}
+        <span className="truncate min-w-0 flex-1">
+          {selectedOption?.label || placeholder || "All"}
+        </span>
+        <ChevronDown className={cn("size-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2", isOpen && "rotate-180 text-blue-600")} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 top-full mt-1.5 z-50 min-w-full w-max max-w-sm sm:max-w-md rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl max-h-64 overflow-hidden flex flex-col text-xs animate-in fade-in zoom-in-95 duration-150">
+          {options.length > 5 && (
+            <div className="p-1 mb-1 border-b border-slate-100 shrink-0">
+              <div className="relative">
+                <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Filter options..."
+                  className="w-full h-8 pl-8 pr-2.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="overflow-y-auto space-y-0.5 max-h-56 pr-0.5">
+            {filteredOptions.length === 0 ? (
+              <p className="p-3 text-center text-slate-400 font-medium italic">No matching items</p>
+            ) : (
+              filteredOptions.map((opt) => {
+                const isSelected = opt.value === currentValue;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={opt.disabled}
+                    onClick={() => handleSelect(opt.value)}
+                    className={cn(
+                      "flex w-full items-center justify-between px-3 py-2 rounded-xl text-left transition-all cursor-pointer text-xs",
+                      opt.disabled && "opacity-40 cursor-not-allowed",
+                      isSelected
+                        ? "bg-blue-50 text-blue-900 font-extrabold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-semibold"
+                    )}
+                  >
+                    <span className="truncate pr-2">{opt.label}</span>
+                    {isSelected && <Check className="size-3.5 text-blue-600 shrink-0" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

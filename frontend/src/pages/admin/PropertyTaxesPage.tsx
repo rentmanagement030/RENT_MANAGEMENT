@@ -20,7 +20,7 @@ import { api, downloadUrl } from "@/lib/api";
 import { TaxRecord, TaxStats, Property } from "@/types";
 import { formatINR } from "@/lib/format";
 import { Modal } from "@/components/ui/Modal";
-import { Button, FilterSelect } from "@/components/ui/primitives";
+import { Button, FilterSelect, Select } from "@/components/ui/primitives";
 
 export function PropertyTaxesPage() {
   const [loading, setLoading] = useState(true);
@@ -633,17 +633,17 @@ export function PropertyTaxesPage() {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Payment Method
                 </label>
-                <select
+                <Select
                   value={payMethod}
                   onChange={(e) => setPayMethod(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                  className="w-full text-xs"
                 >
                   <option value="UPI">UPI</option>
                   <option value="CASH">Cash</option>
                   <option value="BANK_TRANSFER">Bank Transfer</option>
                   <option value="CHEQUE">Cheque</option>
                   <option value="OTHER">Other</option>
-                </select>
+                </Select>
               </div>
             </div>
 
@@ -754,36 +754,36 @@ export function PropertyTaxesPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Tax Type</label>
-              <select
+              <Select
                 value={newTaxType}
                 onChange={(e) => setNewTaxType(e.target.value as any)}
-                className="w-full p-2 border border-slate-300 rounded bg-white"
+                className="w-full"
               >
                 <option value="PROPERTY_TAX">Property Tax</option>
                 <option value="WATER_TAX">Water Tax</option>
-              </select>
+              </Select>
             </div>
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Ownership</label>
-              <select
+              <Select
                 value={newTaxOwnership}
                 onChange={(e) => setNewTaxOwnership(e.target.value as any)}
-                className="w-full p-2 border border-slate-300 rounded bg-white"
+                className="w-full"
               >
                 <option value="PROPERTY">Property Level</option>
                 <option value="HOME">Home Level</option>
-              </select>
+              </Select>
             </div>
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 mb-1">Property</label>
-            <select
+            <Select
               required
               value={newPropId}
               onChange={(e) => setNewPropId(e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded bg-white"
+              className="w-full"
             >
               <option value="">Select Property</option>
               {properties.map((p) => (
@@ -791,7 +791,7 @@ export function PropertyTaxesPage() {
                   {p.name} ({p.city})
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -814,17 +814,17 @@ export function PropertyTaxesPage() {
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Tax Frequency</label>
-              <select
+              <Select
                 value={newFrequency}
                 onChange={(e) => setNewFrequency(e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded bg-white"
+                className="w-full"
               >
                 <option value="ANNUAL">Annual (1 Year)</option>
                 <option value="HALF_YEARLY">Half Yearly (6 Months)</option>
                 <option value="QUARTERLY">Quarterly (3 Months)</option>
                 <option value="BI_MONTHLY">Bi-Monthly (2 Months)</option>
                 <option value="MONTHLY">Monthly (1 Month)</option>
-              </select>
+              </Select>
             </div>
           </div>
 
