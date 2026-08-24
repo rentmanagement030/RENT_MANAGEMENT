@@ -199,12 +199,33 @@ export default function PropertiesPage() {
   // City options
   const cityOptions = Array.from(new Set(allItems.map((p) => p.city).filter(Boolean)));
 
+  // Helper to extract effective monthly rent for sorting across all property types
+  const getPropertyEffectiveRent = (p: any): number => {
+    if (p.potentialRevenue !== undefined && p.potentialRevenue !== null && Number(p.potentialRevenue) > 0) {
+      return Number(p.potentialRevenue);
+    }
+    if (Array.isArray(p.homes) && p.homes.length > 0) {
+      const homesTotal = p.homes.reduce((sum: number, h: any) => sum + Number(h.rent || 0), 0);
+      if (homesTotal > 0) return homesTotal;
+    }
+    if (Array.isArray(p.rooms) && p.rooms.length > 0) {
+      const roomsTotal = p.rooms.reduce((sum: number, r: any) => {
+        if (Array.isArray(r.beds) && r.beds.length > 0) {
+          return sum + r.beds.reduce((bSum: number, b: any) => bSum + Number(b.rent || r.rent || 0), 0);
+        }
+        return sum + (Number(r.rent || 0) * (r.capacity || 1));
+      }, 0);
+      if (roomsTotal > 0) return roomsTotal;
+    }
+    return Number(p.rent || 0);
+  };
+
   // Client-side filtering & sorting
   const itemsToDisplay = (data?.items ?? [])
     .filter((p) => (!cityFilter ? true : p.city === cityFilter))
     .sort((a, b) => {
-      if (sortBy === "rent-desc") return Number(b.rent) - Number(a.rent);
-      if (sortBy === "rent-asc") return Number(a.rent) - Number(b.rent);
+      if (sortBy === "rent-desc") return getPropertyEffectiveRent(b) - getPropertyEffectiveRent(a);
+      if (sortBy === "rent-asc") return getPropertyEffectiveRent(a) - getPropertyEffectiveRent(b);
       return a.name.localeCompare(b.name);
     });
 
