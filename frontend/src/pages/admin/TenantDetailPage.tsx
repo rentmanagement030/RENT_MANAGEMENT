@@ -1396,6 +1396,7 @@ export function TransferTenantModal({
 }) {
   const { success, error: toastError } = useToast();
   const [toPropertyId, setToPropertyId] = useState("");
+  const [toHomeId, setToHomeId] = useState("");
   const [toRoomId, setToRoomId] = useState("");
   const [toBedId, setToBedId] = useState("");
   const [toRent, setToRent] = useState(tenant.rent || "0");
@@ -1411,6 +1412,8 @@ export function TransferTenantModal({
 
   const selectedProperty = properties?.items.find((p) => p.id === toPropertyId);
   const isPg = selectedProperty?.type === "PG";
+  const isMultiUnit = selectedProperty && selectedProperty.type !== "PG" && selectedProperty.type !== "HOUSE";
+  const homesList = selectedProperty?.homes || [];
 
   const { data: rooms } = useQuery({
     queryKey: ["rooms", toPropertyId],
@@ -1424,6 +1427,7 @@ export function TransferTenantModal({
     mutationFn: () =>
       api.transferTenant(tenant.id, {
         toPropertyId,
+        toHomeId: toHomeId || undefined,
         toRoomId: toRoomId || undefined,
         toBedId: toBedId || undefined,
         toRent: Number(toRent),
@@ -1461,7 +1465,7 @@ export function TransferTenantModal({
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
             <span className="text-[10px] uppercase font-extrabold text-slate-400 block">Current Stay Assignment</span>
             <p className="font-extrabold text-slate-900">
-              {tenant.property?.name || "Unassigned"} {tenant.room ? `· Room ${tenant.room.roomNumber}` : ""} {tenant.bed ? `(Bed ${tenant.bed.bedNumber})` : ""}
+              {tenant.property?.name || "Unassigned"} {tenant.home ? `· ${tenant.home.homeNumber} (${tenant.home.floor})` : ""} {tenant.room ? `· Room ${tenant.room.roomNumber}` : ""} {tenant.bed ? `(Bed ${tenant.bed.bedNumber})` : ""}
             </p>
             <p className="text-slate-600 font-bold">Current Rent: {formatINR(tenant.rent)}/mo</p>
           </div>
@@ -1471,9 +1475,13 @@ export function TransferTenantModal({
             <Select
               value={toPropertyId}
               onChange={(e) => {
-                setToPropertyId(e.target.value);
+                const pid = e.target.value;
+                setToPropertyId(pid);
+                setToHomeId("");
                 setToRoomId("");
                 setToBedId("");
+                const prop = properties?.items.find((p) => p.id === pid);
+                if (prop?.rent) setToRent(String(prop.rent));
               }}
               required
               className="h-11 font-medium border-slate-300 rounded-xl bg-white text-xs"
@@ -1486,6 +1494,30 @@ export function TransferTenantModal({
               ))}
             </Select>
           </div>
+
+          {isMultiUnit && homesList.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700">Target Home / Unit *</Label>
+              <Select
+                value={toHomeId}
+                onChange={(e) => {
+                  const hid = e.target.value;
+                  setToHomeId(hid);
+                  const h = homesList.find((item) => item.id === hid);
+                  if (h?.rent) setToRent(String(h.rent));
+                }}
+                required
+                className="h-11 font-medium border-slate-300 rounded-xl bg-white text-xs"
+              >
+                <option value="">-- Select Home Unit --</option>
+                {homesList.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.homeNumber} ({h.floor}) — {h.status === "OCCUPIED" ? "Occupied" : "Available"} (Rent: {formatINR(h.rent || selectedProperty?.rent)})
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
 
           {isPg && (
             <div className="grid grid-cols-2 gap-3">
