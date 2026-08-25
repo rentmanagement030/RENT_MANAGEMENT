@@ -1527,14 +1527,14 @@ export function PropertyFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="w-full max-w-3xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-2xl border-none shadow-2xl">
-        <DialogHeader className="sticky top-0 bg-white z-10 pb-3 border-b border-slate-100 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <DialogContent className="w-full max-w-3xl max-h-[92vh] sm:max-h-[90vh] flex flex-col p-0 rounded-2xl border border-slate-200 shadow-2xl bg-white overflow-hidden">
+        <DialogHeader className="p-4 sm:p-6 pb-3 border-b border-slate-100 bg-white shrink-0 text-left">
           <DialogTitle className="text-lg sm:text-xl font-black text-slate-900">{property ? "Edit Property / PG" : "Add New Property / PG"}</DialogTitle>
           <DialogDescription className="text-xs font-semibold text-slate-500">Configure building location, rent, EB meter, amenities, photos, and listing details.</DialogDescription>
         </DialogHeader>
 
         {/* Step Progress Bar */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3 -mt-1 text-xs font-semibold text-slate-500 overflow-x-auto scrollbar-none">
+        <div className="flex items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-2.5 bg-slate-50/60 text-xs font-semibold text-slate-500 overflow-x-auto scrollbar-none shrink-0">
           <button
             type="button"
             onClick={() => handleStepClick(1)}
@@ -1588,7 +1588,7 @@ export function PropertyFormDialog({
         </div>
 
         <form
-          className="space-y-5 pt-1"
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") {
               e.preventDefault();
@@ -1612,8 +1612,10 @@ export function PropertyFormDialog({
             mutation.mutate();
           }}
         >
-          {/* Section 1: Property Identity & Location */}
-          {wizardStep === 1 && (
+          {/* Scrollable Form Body */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+            {/* Section 1: Property Identity & Location */}
+            {wizardStep === 1 && (
             <div className="space-y-3.5 rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 sm:p-4 animate-in fade-in duration-150">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-blue-700 flex items-center gap-1.5">
                 <span>1.</span> Property Identity & Location
@@ -1948,9 +1950,10 @@ export function PropertyFormDialog({
               </div>
             </div>
           )}
+          </div>
 
-          {/* Sticky Action Footer */}
-          <div className="sticky -bottom-4 sm:-bottom-6 bg-white/95 backdrop-blur-md border-t border-slate-200 pt-3 pb-3 px-4 sm:px-6 -mx-4 sm:-mx-6 flex items-center justify-between gap-2.5 z-20 rounded-b-2xl">
+          {/* Fixed Action Footer */}
+          <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/90 shrink-0 flex items-center justify-between gap-2.5 z-10">
             <Button
               type="button"
               variant="outline"
@@ -1961,7 +1964,7 @@ export function PropertyFormDialog({
                   onClose();
                 }
               }}
-              className="h-10 text-xs font-bold border-slate-300 text-slate-700 rounded-xl"
+              className="h-10 text-xs font-bold border-slate-300 text-slate-700 rounded-xl hover:bg-white"
             >
               {wizardStep > 1 ? "Previous" : "Cancel"}
             </Button>
