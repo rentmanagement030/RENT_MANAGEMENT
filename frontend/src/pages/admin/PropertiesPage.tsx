@@ -1503,6 +1503,15 @@ export function PropertyFormDialog({
   };
 
   const isMultiUnitType = form.type === "VILLA" || form.type === "MULTI_UNIT_HOUSE" || form.type === "APARTMENT";
+  const maxSteps = isMultiUnitType && !property ? 4 : 3;
+
+  const handleStepClick = (targetStep: number) => {
+    if (targetStep > 1 && (!form.name.trim() || !form.address.trim() || !form.city.trim())) {
+      toastError("Required fields missing", "Please fill in Property Name, Address, and City before proceeding.");
+      return;
+    }
+    setWizardStep(targetStep);
+  };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -1516,8 +1525,8 @@ export function PropertyFormDialog({
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 -mt-1 text-xs font-semibold text-slate-500 overflow-x-auto scrollbar-none">
           <button
             type="button"
-            onClick={() => setWizardStep(1)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all shrink-0 ${
+            onClick={() => handleStepClick(1)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer ${
               wizardStep === 1 ? "bg-blue-600 text-white font-extrabold shadow-xs" : "hover:bg-slate-100 text-slate-700"
             }`}
           >
@@ -1528,8 +1537,8 @@ export function PropertyFormDialog({
 
           <button
             type="button"
-            onClick={() => setWizardStep(2)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all shrink-0 ${
+            onClick={() => handleStepClick(2)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer ${
               wizardStep === 2 ? "bg-blue-600 text-white font-extrabold shadow-xs" : "hover:bg-slate-100 text-slate-700"
             }`}
           >
@@ -1541,8 +1550,8 @@ export function PropertyFormDialog({
               <ChevronRight className="size-3.5 text-slate-300 shrink-0" />
               <button
                 type="button"
-                onClick={() => setWizardStep(3)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all shrink-0 ${
+                onClick={() => handleStepClick(3)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer ${
                   wizardStep === 3 ? "bg-blue-600 text-white font-extrabold shadow-xs" : "hover:bg-slate-100 text-slate-700"
                 }`}
               >
@@ -1555,9 +1564,9 @@ export function PropertyFormDialog({
 
           <button
             type="button"
-            onClick={() => setWizardStep(isMultiUnitType && !property ? 4 : 3)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all shrink-0 ${
-              (isMultiUnitType && !property ? wizardStep === 4 : wizardStep === 3)
+            onClick={() => handleStepClick(maxSteps)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer ${
+              wizardStep === maxSteps
                 ? "bg-blue-600 text-white font-extrabold shadow-xs"
                 : "hover:bg-slate-100 text-slate-700"
             }`}
@@ -1568,8 +1577,26 @@ export function PropertyFormDialog({
 
         <form
           className="space-y-5 pt-1"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") {
+              e.preventDefault();
+            }
+          }}
           onSubmit={(e) => {
             e.preventDefault();
+            if (wizardStep < maxSteps) {
+              if (wizardStep === 1 && (!form.name.trim() || !form.address.trim() || !form.city.trim())) {
+                toastError("Required fields missing", "Please fill in Property Name, Address, and City before proceeding.");
+                return;
+              }
+              setWizardStep((s) => s + 1);
+              return;
+            }
+            if (!form.name.trim() || !form.address.trim() || !form.city.trim()) {
+              toastError("Required fields missing", "Please fill in Property Name, Address, and City.");
+              setWizardStep(1);
+              return;
+            }
             mutation.mutate();
           }}
         >
