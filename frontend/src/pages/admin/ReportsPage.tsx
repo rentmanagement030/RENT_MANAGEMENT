@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Download, FileBarChart, FileText } from "lucide-react";
-import { api, downloadUrl } from "@/lib/api";
+import { BookOpen, Download, FileBarChart, FileText, Loader2 } from "lucide-react";
+import { api, downloadBlobFile, downloadUrl } from "@/lib/api";
 import { currentMonth, formatINR } from "@/lib/format";
 import { useAuth } from "@/auth/AuthContext";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -19,6 +19,30 @@ export default function ReportsPage() {
   const [billType, setBillType] = useState("");
   const [billStatus, setBillStatus] = useState("");
   const [billTenant, setBillTenant] = useState("");
+  const [exportingCollections, setExportingCollections] = useState(false);
+  const [exportingBills, setExportingBills] = useState(false);
+
+  const handleExportCollections = async () => {
+    setExportingCollections(true);
+    try {
+      await downloadBlobFile(`/payments/export?from=${from || ""}&to=${to || ""}&method=${method || ""}&propertyId=${propertyId || ""}`, "collections.xlsx");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setExportingCollections(false);
+    }
+  };
+
+  const handleExportBills = async () => {
+    setExportingBills(true);
+    try {
+      await downloadBlobFile(`/ops/reports/bills/export?billingMonth=${billMonth || ""}&billType=${billType || ""}&status=${billStatus || ""}&tenantId=${billTenant || ""}&propertyId=${propertyId || ""}`, "bills.xlsx");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setExportingBills(false);
+    }
+  };
 
   const { data: tenants } = useQuery({ queryKey: ["tenants", "all"], queryFn: () => api.listTenants({ pageSize: 200 }) });
   const { data: properties } = useQuery({ queryKey: ["properties", "all"], queryFn: () => api.listProperties({ pageSize: 200 }) });
@@ -67,8 +91,8 @@ export default function ReportsPage() {
         description="Monitor real-time income, property expenses, net profitability, collection rates, and tenant ledgers."
         actions={
           can(PERMISSIONS.REPORTS_READ) ? (
-            <Button variant="outline" onClick={() => window.open(downloadUrl(`/payments/export?from=${from || ""}&to=${to || ""}&method=${method || ""}&propertyId=${propertyId || ""}`), "_blank")}>
-              <Download /> Export Excel
+            <Button variant="outline" onClick={handleExportCollections} disabled={exportingCollections}>
+              {exportingCollections ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />} Export Excel
             </Button>
           ) : undefined
         }
@@ -373,8 +397,8 @@ export default function ReportsPage() {
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle>Bills report</CardTitle>
-            <Button variant="outline" size="sm" onClick={() => window.open(api.exportBills({ billingMonth: billMonth || undefined, billType: billType || undefined, status: billStatus || undefined, tenantId: billTenant || undefined, propertyId: propertyId || undefined }), "_blank")}>
-              <Download /> Export Excel
+            <Button variant="outline" size="sm" onClick={handleExportBills} disabled={exportingBills}>
+              {exportingBills ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />} Export Excel
             </Button>
           </div>
         </CardHeader>

@@ -24,7 +24,7 @@ import {
   Clock,
   Copy,
 } from "lucide-react";
-import { api, downloadUrl } from "@/lib/api";
+import { api, downloadBlobFile, downloadUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { formatDateTime, formatDate, formatINR, currentMonth } from "@/lib/format";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -554,9 +554,8 @@ export default function PaymentsPage() {
   const handleExportExcel = async () => {
     setExporting(true);
     try {
-      const url = downloadUrl("/ops/reports/collection/export");
-      window.open(url, "_blank");
-      success("Export Started", "Downloading collections Excel report...");
+      await downloadBlobFile("/ops/reports/collection/export", "collections.xlsx");
+      success("Export Downloaded", "Collections Excel report downloaded successfully.");
     } catch (e) {
       toastError("Export failed", e instanceof Error ? e.message : undefined);
     } finally {

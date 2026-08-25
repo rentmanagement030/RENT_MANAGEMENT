@@ -13,7 +13,18 @@ export interface DateRange {
 
 function buildDateWhere(range: DateRange): Prisma.PaymentWhereInput["paymentDate"] {
   if (!range.from && !range.to) return undefined;
-  return { gte: range.from, lte: range.to };
+  const where: Prisma.DateTimeFilter = {};
+  if (range.from) {
+    const fromDate = new Date(range.from);
+    fromDate.setHours(0, 0, 0, 0);
+    where.gte = fromDate;
+  }
+  if (range.to) {
+    const toDate = new Date(range.to);
+    toDate.setHours(23, 59, 59, 999);
+    where.lte = toDate;
+  }
+  return where;
 }
 
 export interface CollectionFilters extends DateRange {

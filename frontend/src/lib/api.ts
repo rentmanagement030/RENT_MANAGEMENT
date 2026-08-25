@@ -469,6 +469,41 @@ export function downloadUrl(path: string): string {
   return `${BASE}${cleanPath}${authParam}`;
 }
 
+/** Reliably fetch and download binary files (PDFs, Excel spreadsheets) with auth headers across origins */
+export async function downloadBlobFile(urlOrPath: string, defaultFilename = "download"): Promise<void> {
+  const fullUrl = downloadUrl(urlOrPath);
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(fullUrl, {
+    headers,
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(`Download failed (HTTP ${res.status}): ${res.statusText}`);
+  }
+
+  let filename = defaultFilename;
+  const disposition = res.headers.get("content-disposition");
+  if (disposition && disposition.includes("filename=")) {
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    if (match && match[1]) filename = match[1];
+  }
+
+  const blob = await res.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
+}
+
 /** Flatten the grouped outstanding endpoint into a flat row per rent record / bill. */
 export function flattenOutstanding(groups: OutstandingGroup[]): OutstandingRow[] {
   return groups.flatMap((g) =>

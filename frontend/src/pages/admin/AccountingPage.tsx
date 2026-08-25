@@ -31,7 +31,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { api, downloadUrl } from "@/lib/api";
+import { api, downloadBlobFile, downloadUrl } from "@/lib/api";
 import { currentMonth, formatINR } from "@/lib/format";
 import {
   Badge,
@@ -280,11 +280,9 @@ export default function AccountingPage() {
                 variant="outline"
                 className="h-10 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center justify-center truncate w-full"
                 onClick={() =>
-                  window.open(
-                    downloadUrl(
-                      `/ops/reports/collection/export?from=${dateRange.from || ""}&to=${dateRange.to || ""}&propertyId=${selectedPropertyId}`
-                    ),
-                    "_blank"
+                  downloadBlobFile(
+                    `/ops/reports/collection/export?from=${dateRange.from || ""}&to=${dateRange.to || ""}&propertyId=${selectedPropertyId}`,
+                    "collections.xlsx"
                   )
                 }
               >
@@ -295,10 +293,10 @@ export default function AccountingPage() {
               <Button
                 variant="outline"
                 className="h-10 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center justify-center truncate w-full"
-                onClick={() => window.open(downloadUrl("/ops/reports/outstanding/export"), "_blank")}
+                onClick={() => downloadBlobFile("/ops/reports/outstanding/export", "outstanding.xlsx")}
               >
                 <Download className="size-3.5 mr-1 text-blue-600 shrink-0" />
-                <span className="truncate">Export PDF</span>
+                <span className="truncate">Export Excel</span>
               </Button>
             </div>
           </div>

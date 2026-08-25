@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Download, ExternalLink, FileText, Loader2, Maximize, Minimize, Printer, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/primitives";
-import { downloadUrl, getAuthToken } from "@/lib/api";
+import { downloadBlobFile, downloadUrl, getAuthToken } from "@/lib/api";
 
 interface FileViewerProps {
   open: boolean;
@@ -23,7 +23,22 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
   const [fullscreen, setFullscreen] = useState(false);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await downloadBlobFile(resolvedUrl, name || "document.pdf");
+    } catch (err) {
+      console.error("Download error:", err);
+      // Fallback
+      window.open(resolvedUrl, "_blank");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -168,15 +183,15 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
             </Button>
           )}
 
-          <a
-            href={resolvedUrl}
-            download={name}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-50"
           >
-            <Download className="size-3.5" /> <span className="hidden sm:inline">Download</span>
-          </a>
+            {downloading ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+            <span className="hidden sm:inline">{downloading ? "Downloading..." : "Download"}</span>
+          </button>
 
           <button
             type="button"
@@ -214,15 +229,13 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
                 <p className="text-base font-extrabold text-white">{name}</p>
                 <p className="mt-1 text-xs font-medium text-rose-300">{loadError}</p>
               </div>
-              <a
-                href={resolvedUrl}
-                download={name}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={handleDownload}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors"
               >
                 <Download className="size-4" /> Download PDF Directly
-              </a>
+              </button>
             </div>
           ) : (
             <div className="flex h-full w-full max-w-5xl flex-col items-center justify-center">
@@ -246,15 +259,14 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
                   >
                     <ExternalLink className="size-4" /> Open / View PDF
                   </a>
-                  <a
-                    href={resolvedUrl}
-                    download={name}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    disabled={downloading}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-700/80 px-5 py-3 text-xs font-bold text-slate-200 hover:bg-slate-700 active:scale-[0.98] transition-all min-h-[44px]"
                   >
-                    <Download className="size-4" /> Download PDF
-                  </a>
+                    {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />} Download PDF
+                  </button>
                 </div>
               </div>
 
@@ -279,15 +291,13 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
                 This document format can be downloaded for viewing on your device.
               </p>
             </div>
-            <a
-              href={resolvedUrl}
-              download={name}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={handleDownload}
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors"
             >
               <Download className="size-4" /> Download File
-            </a>
+            </button>
           </div>
         )}
       </div>
