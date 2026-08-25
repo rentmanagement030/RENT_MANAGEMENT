@@ -53,7 +53,11 @@ export async function getDashboard() {
     prisma.property.findMany({ take: 6, orderBy: { createdAt: "desc" } }),
     prisma.rentRecord.findMany({
       take: 8,
-      where: { status: { in: ["PENDING", "PARTIAL"] }, tenant: { status: "ACTIVE" } },
+      where: {
+        status: { in: ["PENDING", "PARTIAL"] },
+        billingMonth: { lte: currentFinancials.billingMonth },
+        tenant: { status: "ACTIVE" },
+      },
       orderBy: { dueDate: "asc" },
       include: { tenant: { select: { id: true, name: true, phone: true } } },
     }),

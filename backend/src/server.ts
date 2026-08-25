@@ -60,7 +60,24 @@ async function bootstrapWorker() {
     // Ensure roles/permissions only if running as single process or first worker
     if (!cluster.isWorker || cluster.worker?.id === 1) {
       await ensureRolesAndPermissions();
-      logger.info("Roles and permissions ensured");
+      // Purge any premature unpaid future month bills and rent records in the database
+      const now = new Date();
+      const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      await prisma.bill.deleteMany({
+        where: {
+          billingMonth: { gt: currentMonthStr },
+          paidAmount: 0,
+          status: "PENDING",
+        },
+      }).catch(() => {});
+      await prisma.rentRecord.deleteMany({
+        where: {
+          billingMonth: { gt: currentMonthStr },
+          paidAmount: 0,
+          status: "PENDING",
+        },
+      }).catch(() => {});
+      logger.info("Roles and permissions ensured, premature future records cleaned");
     }
 
     const app = createApp();
