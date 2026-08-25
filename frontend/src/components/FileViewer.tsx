@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Download, FileText, Loader2, Maximize, Minimize, Printer, X, ZoomIn, ZoomOut } from "lucide-react";
+import { AlertCircle, Download, ExternalLink, FileText, Loader2, Maximize, Minimize, Printer, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/primitives";
 import { downloadUrl, getAuthToken } from "@/lib/api";
 
@@ -225,13 +225,48 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
               </a>
             </div>
           ) : (
-            <iframe
-              ref={iframeRef}
-              src={activeDocUrl}
-              title={name}
-              className="h-full w-full max-w-5xl rounded-xl border border-slate-700/80 bg-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <div className="flex h-full w-full max-w-5xl flex-col items-center justify-center">
+              {/* Mobile View: Dedicated Native Document Viewer Card (Eliminates mobile iframe dark GUID box) */}
+              <div className="flex sm:hidden flex-col items-center justify-center gap-4 p-6 text-center text-slate-100 max-w-sm rounded-2xl bg-slate-800/90 border border-slate-700 shadow-2xl backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
+                <div className="flex size-20 items-center justify-center rounded-2xl bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-lg">
+                  <FileText className="size-10 stroke-[1.75]" />
+                </div>
+                <div className="space-y-1">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                    PDF Document
+                  </span>
+                  <p className="text-sm font-extrabold text-white line-clamp-2 px-2">{name}</p>
+                </div>
+                <div className="w-full space-y-2.5 pt-2">
+                  <a
+                    href={activeDocUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-xs font-bold text-white shadow-lg hover:bg-blue-700 active:scale-[0.98] transition-all min-h-[44px]"
+                  >
+                    <ExternalLink className="size-4" /> Open / View PDF
+                  </a>
+                  <a
+                    href={resolvedUrl}
+                    download={name}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-700/80 px-5 py-3 text-xs font-bold text-slate-200 hover:bg-slate-700 active:scale-[0.98] transition-all min-h-[44px]"
+                  >
+                    <Download className="size-4" /> Download PDF
+                  </a>
+                </div>
+              </div>
+
+              {/* Desktop / Tablet View: Full Embedded PDF Reader */}
+              <iframe
+                ref={iframeRef}
+                src={activeDocUrl}
+                title={name}
+                className="hidden sm:block h-full w-full rounded-xl border border-slate-700/80 bg-white shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
           )
         ) : (
           <div className="flex flex-col items-center gap-3.5 p-8 text-center text-slate-200" onClick={(e) => e.stopPropagation()}>
