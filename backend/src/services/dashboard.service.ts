@@ -69,31 +69,67 @@ export async function getDashboard() {
     prisma.notification.count({ where: { status: "PENDING" } }),
   ]);
 
-  const [
-    totalPgBeds,
-    occupiedPgBeds,
-    availablePgBeds,
-    totalHouseCapacity,
-    occupiedHouseCapacity,
-    availableHouseCapacity,
-    totalPropertyHomes,
-    occupiedPropertyHomes,
-    availablePropertyHomes,
-  ] = await Promise.all([
-    prisma.pgBed.count({ where: { archived: false } }),
-    prisma.pgBed.count({ where: { archived: false, status: "OCCUPIED" } }),
-    prisma.pgBed.count({ where: { archived: false, status: "AVAILABLE" } }),
-    prisma.property.count({ where: { archived: false, type: "HOUSE" } }),
-    prisma.property.count({ where: { archived: false, type: "HOUSE", status: "OCCUPIED" } }),
-    prisma.property.count({ where: { archived: false, type: "HOUSE", status: "AVAILABLE" } }),
-    prisma.propertyHome.count({ where: { archived: false, property: { type: "VILLA" } } }),
-    prisma.propertyHome.count({ where: { archived: false, status: "OCCUPIED", property: { type: "VILLA" } } }),
-    prisma.propertyHome.count({ where: { archived: false, status: "AVAILABLE", property: { type: "VILLA" } } }),
-  ]);
+  // Fetch all active properties with hierarchy to compute real-time capacity and occupancy
+  const propertiesAll = await prisma.property.findMany({
+    where: { archived: false },
+    include: {
+      homes: { where: { archived: false } },
+      rooms: { where: { archived: false }, include: { beds: { where: { archived: false } } } },
+      tenants: { where: { status: "ACTIVE" } },
+    },
+  });
+
+  let totalPgBeds = 0;
+  let occupiedPgBeds = 0;
+  let totalPropertyHomes = 0;
+  let occupiedPropertyHomes = 0;
+  let totalHouseCapacity = 0;
+  let occupiedHouseCapacity = 0;
+
+  for (const p of propertiesAll) {
+    const activeTenantCount = p.tenants.length;
+
+    if (p.type === "PG") {
+      let pgBedsInProp = 0;
+      let pgOccupiedInProp = 0;
+      for (const r of p.rooms) {
+        for (const b of r.beds) {
+          pgBedsInProp += 1;
+          if (b.status === "OCCUPIED" || !!b.tenantId) pgOccupiedInProp += 1;
+        }
+      }
+      if (pgBedsInProp === 0) {
+        pgBedsInProp = p.maxCapacity || 1;
+        pgOccupiedInProp = Math.min(activeTenantCount, pgBedsInProp);
+      }
+      totalPgBeds += pgBedsInProp;
+      occupiedPgBeds += pgOccupiedInProp;
+    } else if (p.homes && p.homes.length > 0) {
+      let homesInProp = 0;
+      let homesOccupiedInProp = 0;
+      for (const h of p.homes) {
+        homesInProp += 1;
+        if (h.status === "OCCUPIED" || p.tenants.some((t) => t.homeId === h.id)) homesOccupiedInProp += 1;
+      }
+      totalPropertyHomes += homesInProp;
+      occupiedPropertyHomes += homesOccupiedInProp;
+    } else {
+      const cap = Math.max(1, p.maxCapacity || 1);
+      const isOccupied = p.status === "OCCUPIED" || activeTenantCount > 0;
+      const occ = isOccupied ? Math.min(cap, Math.max(1, activeTenantCount)) : 0;
+
+      totalHouseCapacity += cap;
+      occupiedHouseCapacity += occ;
+    }
+  }
+
+  const availablePgBeds = Math.max(0, totalPgBeds - occupiedPgBeds);
+  const availablePropertyHomes = Math.max(0, totalPropertyHomes - occupiedPropertyHomes);
+  const availableHouseCapacity = Math.max(0, totalHouseCapacity - occupiedHouseCapacity);
 
   const totalCapacity = totalPgBeds + totalHouseCapacity + totalPropertyHomes;
   const occupiedCapacity = occupiedPgBeds + occupiedHouseCapacity + occupiedPropertyHomes;
-  const availableCapacity = availablePgBeds + availableHouseCapacity + availablePropertyHomes;
+  const availableCapacity = Math.max(0, totalCapacity - occupiedCapacity);
   const occupancyRate = totalCapacity > 0 ? Math.round((occupiedCapacity / totalCapacity) * 100) : 0;
 
   const monthlyCollectionValue = currentFinancials.collected;
@@ -106,8 +142,8 @@ export async function getDashboard() {
       totalProperties,
       totalHouses,
       totalPgs,
-      occupied: currentFinancials.occupiedCapacity || occupiedCapacity,
-      vacant: currentFinancials.vacantCapacity || availableCapacity,
+      occupied: occupiedCapacity,
+      vacant: availableCapacity,
       maintenance: maintenanceHouses,
       totalTenants,
       activeTenants,
@@ -122,7 +158,7 @@ export async function getDashboard() {
       potentialRevenue: currentFinancials.potentialRevenue,
       totalPaymentsReceived: currentFinancials.totalPaymentsReceived,
       collectionRate: currentFinancials.collectionRate,
-      occupancyRate: currentFinancials.occupancyRate || occupancyRate,
+      occupancyRate,
       periodOperatingExpenses: currentFinancials.periodOperatingExpenses,
       allTimeExpenses: currentFinancials.allTimeExpenses,
       netOperatingProfit: currentFinancials.netOperatingProfit,
@@ -234,28 +270,75 @@ async function getOutstandingSeries(months: number) {
 }
 
 async function getOccupancyBreakdown() {
-  const houses = await prisma.property.findMany({
-    where: { archived: false, type: "HOUSE" },
-    select: { status: true },
-  });
-  const rooms = await prisma.pgRoom.findMany({
+  const propertiesAll = await prisma.property.findMany({
     where: { archived: false },
-    include: { beds: { where: { archived: false } } },
+    include: {
+      homes: { where: { archived: false } },
+      rooms: { where: { archived: false }, include: { beds: { where: { archived: false } } } },
+      tenants: { where: { status: "ACTIVE" } },
+    },
   });
-  let bedsOccupied = 0;
-  let bedsTotal = 0;
-  rooms.forEach((room) => {
-    bedsTotal += room.beds.length;
-    bedsOccupied += room.beds.filter((b) => b.status === "OCCUPIED").length;
-  });
-  const housesOccupied = houses.filter((h) => h.status === "OCCUPIED").length;
+
+  let totalPgBeds = 0;
+  let occupiedPgBeds = 0;
+  let totalPropertyHomes = 0;
+  let occupiedPropertyHomes = 0;
+  let totalHouseCapacity = 0;
+  let occupiedHouseCapacity = 0;
+
+  for (const p of propertiesAll) {
+    const activeTenantCount = p.tenants.length;
+
+    if (p.type === "PG") {
+      let pgBedsInProp = 0;
+      let pgOccupiedInProp = 0;
+      for (const r of p.rooms) {
+        for (const b of r.beds) {
+          pgBedsInProp += 1;
+          if (b.status === "OCCUPIED" || !!b.tenantId) pgOccupiedInProp += 1;
+        }
+      }
+      if (pgBedsInProp === 0) {
+        pgBedsInProp = p.maxCapacity || 1;
+        pgOccupiedInProp = Math.min(activeTenantCount, pgBedsInProp);
+      }
+      totalPgBeds += pgBedsInProp;
+      occupiedPgBeds += pgOccupiedInProp;
+    } else if (p.homes && p.homes.length > 0) {
+      let homesInProp = 0;
+      let homesOccupiedInProp = 0;
+      for (const h of p.homes) {
+        homesInProp += 1;
+        if (h.status === "OCCUPIED" || p.tenants.some((t) => t.homeId === h.id)) homesOccupiedInProp += 1;
+      }
+      totalPropertyHomes += homesInProp;
+      occupiedPropertyHomes += homesOccupiedInProp;
+    } else {
+      const cap = Math.max(1, p.maxCapacity || 1);
+      const isOccupied = p.status === "OCCUPIED" || activeTenantCount > 0;
+      const occ = isOccupied ? Math.min(cap, Math.max(1, activeTenantCount)) : 0;
+
+      totalHouseCapacity += cap;
+      occupiedHouseCapacity += occ;
+    }
+  }
+
   return {
     houses: {
-      total: houses.length,
-      occupied: housesOccupied,
-      available: houses.filter((h) => h.status === "AVAILABLE").length,
-      maintenance: houses.filter((h) => h.status === "MAINTENANCE").length,
+      total: totalHouseCapacity,
+      occupied: occupiedHouseCapacity,
+      available: Math.max(0, totalHouseCapacity - occupiedHouseCapacity),
+      maintenance: 0,
     },
-    beds: { total: bedsTotal, occupied: bedsOccupied },
+    homes: {
+      total: totalPropertyHomes,
+      occupied: occupiedPropertyHomes,
+      available: Math.max(0, totalPropertyHomes - occupiedPropertyHomes),
+    },
+    beds: {
+      total: totalPgBeds,
+      occupied: occupiedPgBeds,
+      available: Math.max(0, totalPgBeds - occupiedPgBeds),
+    },
   };
 }

@@ -187,18 +187,24 @@ export default function DashboardPage() {
   }
 
   // Occupancy metrics
-  const totalBeds = data.occupancy?.totalPropertyHomes ?? 0;
-  const occupiedBeds = data.occupancy?.occupiedPropertyHomes ?? 0;
-  const availableBeds = totalBeds - occupiedBeds;
-  const pgBedPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+  const totalHomes = data.occupancy?.totalPropertyHomes ?? 0;
+  const occupiedHomes = data.occupancy?.occupiedPropertyHomes ?? 0;
+  const availableHomes = data.occupancy?.availablePropertyHomes ?? (totalHomes - occupiedHomes);
+  const homePct = totalHomes > 0 ? Math.round((occupiedHomes / totalHomes) * 100) : 0;
 
   const houseTotal = data.occupancy?.totalHouseCapacity ?? 0;
   const houseOccupied = data.occupancy?.occupiedHouseCapacity ?? 0;
-  const houseAvailable = data.occupancy?.availableHouseCapacity ?? 0;
-  const houseMaintenance = 0; // Not heavily used for this breakdown
+  const houseAvailable = data.occupancy?.availableHouseCapacity ?? (houseTotal - houseOccupied);
   const housePct = houseTotal > 0 ? Math.round((houseOccupied / houseTotal) * 100) : 0;
 
-  const totalAvailableUnits = houseAvailable + availableBeds;
+  const totalBeds = data.occupancy?.totalPgBeds ?? 0;
+  const occupiedBeds = data.occupancy?.occupiedPgBeds ?? 0;
+  const availableBeds = data.occupancy?.availablePgBeds ?? (totalBeds - occupiedBeds);
+  const pgBedPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+
+  const totalCapacity = data.occupancy?.totalCapacity ?? (s.occupied + s.vacant);
+  const totalOccupied = data.occupancy?.occupiedCapacity ?? s.occupied;
+  const totalAvailable = data.occupancy?.availableCapacity ?? s.vacant;
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-12">
@@ -396,7 +402,7 @@ export default function DashboardPage() {
             <div className="mt-1.5">
               <p className="text-lg sm:text-xl font-black text-blue-600">{s.occupancyRate}%</p>
               <p className="text-[10px] font-medium text-slate-400 mt-0.5">
-                {data.occupancy?.occupiedCapacity ?? s.occupied} / {data.occupancy?.totalCapacity ?? (s.occupied + s.vacant)} Units
+                {totalOccupied} / {totalCapacity} Units
               </p>
             </div>
           </Card>
@@ -405,47 +411,47 @@ export default function DashboardPage() {
 
 
 
-        {/* Occupancy Overview Breakdown (Two-Column Layout) */}
+        {/* Occupancy Overview Breakdown */}
         <Card className="border border-slate-200 bg-white shadow-2xs rounded-2xl overflow-hidden">
           <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-black text-slate-900">Occupancy Overview</CardTitle>
               <span className="text-xs font-extrabold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
-                {s.occupancyRate}% Total Capacity Occupied
+                {s.occupancyRate}% Total Capacity Occupied ({totalOccupied} / {totalCapacity} Units)
               </span>
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left Column: Multi House Occupancy */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {/* Left Column: Multi House / Apartment Units */}
               <div className="space-y-2 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
                 <div className="flex justify-between items-center text-xs font-bold">
                   <span className="text-slate-900 flex items-center gap-1.5 font-black">
                     <span className="size-2 rounded-full bg-blue-600" />
-                    MULTI HOUSE OCCUPANCY
+                    MULTI HOUSE / APARTMENTS
                   </span>
-                  <span className="text-blue-700 font-mono font-black">{occupiedBeds} / {totalBeds} houses ({pgBedPct}%)</span>
+                  <span className="text-blue-700 font-mono font-black">{occupiedHomes} / {totalHomes} homes ({homePct}%)</span>
                 </div>
                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
                   <div
                     className="h-full bg-blue-600 transition-all duration-500 rounded-full"
-                    style={{ width: `${pgBedPct}%` }}
+                    style={{ width: `${homePct}%` }}
                   />
                 </div>
                 <div className="flex justify-between text-[11px] font-semibold text-slate-500 pt-0.5">
-                  <span>Occupied: {occupiedBeds}</span>
-                  <span>Available: {availableBeds}</span>
+                  <span>Occupied: {occupiedHomes}</span>
+                  <span>Available: {availableHomes}</span>
                 </div>
               </div>
 
-              {/* Right Column: Individual Villa Occupancy */}
+              {/* Middle Column: Individual Villa Occupancy */}
               <div className="space-y-2 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
                 <div className="flex justify-between items-center text-xs font-bold">
                   <span className="text-slate-900 flex items-center gap-1.5 font-black">
                     <span className="size-2 rounded-full bg-emerald-600" />
-                    INDIVIDUAL VILLA OCCUPANCY
+                    INDIVIDUAL VILLAS / HOUSES
                   </span>
-                  <span className="text-emerald-700 font-mono font-black">{houseOccupied} / {houseTotal} villas ({housePct}%)</span>
+                  <span className="text-emerald-700 font-mono font-black">{houseOccupied} / {houseTotal} houses ({housePct}%)</span>
                 </div>
                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
                   <div
@@ -458,6 +464,29 @@ export default function DashboardPage() {
                   <span>Available: {houseAvailable}</span>
                 </div>
               </div>
+
+              {/* Right Column: PG / Hostel Beds (if any) */}
+              {totalBeds > 0 && (
+                <div className="space-y-2 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
+                  <div className="flex justify-between items-center text-xs font-bold">
+                    <span className="text-slate-900 flex items-center gap-1.5 font-black">
+                      <span className="size-2 rounded-full bg-purple-600" />
+                      PG / HOSTEL BEDS
+                    </span>
+                    <span className="text-purple-700 font-mono font-black">{occupiedBeds} / {totalBeds} beds ({pgBedPct}%)</span>
+                  </div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full bg-purple-600 transition-all duration-500 rounded-full"
+                      style={{ width: `${pgBedPct}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[11px] font-semibold text-slate-500 pt-0.5">
+                    <span>Occupied: {occupiedBeds}</span>
+                    <span>Available: {availableBeds}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

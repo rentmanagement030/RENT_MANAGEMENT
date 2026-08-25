@@ -93,7 +93,11 @@ export async function getPeriodFinancialSummaryEngine(filter: PeriodFilter = {})
   // 5. Portfolio Potential Revenue & Capacity Occupancy Engine
   const propertiesAll = await prisma.property.findMany({
     where: { archived: false, ...(filter.propertyId ? { id: filter.propertyId } : {}) },
-    select: { rent: true, type: true, rooms: { include: { beds: { where: { archived: false } } } } },
+    include: {
+      homes: { where: { archived: false } },
+      rooms: { where: { archived: false }, include: { beds: { where: { archived: false } } } },
+      tenants: { where: { status: "ACTIVE" } },
+    },
   });
 
   let potentialRevenue = 0;
@@ -101,16 +105,44 @@ export async function getPeriodFinancialSummaryEngine(filter: PeriodFilter = {})
   let occupiedCapacity = 0;
 
   for (const p of propertiesAll) {
-    if (p.type === "PG" && p.rooms.length > 0) {
+    const activeTenantCount = p.tenants.length;
+
+    if (p.type === "PG") {
+      let pgBedsInProp = 0;
+      let pgOccupiedInProp = 0;
       for (const r of p.rooms) {
         for (const b of r.beds) {
-          totalCapacity += 1;
-          if (b.status === "OCCUPIED") occupiedCapacity += 1;
+          pgBedsInProp += 1;
+          const isBedOccupied = b.status === "OCCUPIED" || !!b.tenantId;
+          if (isBedOccupied) pgOccupiedInProp += 1;
           potentialRevenue += numberMoney(b.rent ?? r.rent ?? p.rent ?? zero());
         }
       }
+      if (pgBedsInProp === 0) {
+        pgBedsInProp = p.maxCapacity || 1;
+        pgOccupiedInProp = Math.min(activeTenantCount, pgBedsInProp);
+        potentialRevenue += numberMoney(p.rent ?? zero());
+      }
+      totalCapacity += pgBedsInProp;
+      occupiedCapacity += pgOccupiedInProp;
+    } else if (p.homes && p.homes.length > 0) {
+      let homesInProp = 0;
+      let homesOccupiedInProp = 0;
+      for (const h of p.homes) {
+        homesInProp += 1;
+        const isHomeOccupied = h.status === "OCCUPIED" || p.tenants.some((t) => t.homeId === h.id);
+        if (isHomeOccupied) homesOccupiedInProp += 1;
+        potentialRevenue += numberMoney(h.rent ?? p.rent ?? zero());
+      }
+      totalCapacity += homesInProp;
+      occupiedCapacity += homesOccupiedInProp;
     } else {
-      totalCapacity += 1;
+      const cap = Math.max(1, p.maxCapacity || 1);
+      const isOccupied = p.status === "OCCUPIED" || activeTenantCount > 0;
+      const occ = isOccupied ? Math.min(cap, Math.max(1, activeTenantCount)) : 0;
+
+      totalCapacity += cap;
+      occupiedCapacity += occ;
       potentialRevenue += numberMoney(p.rent ?? zero());
     }
   }
