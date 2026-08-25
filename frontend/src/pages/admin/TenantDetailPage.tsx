@@ -581,9 +581,9 @@ export default function TenantDetailPage() {
                 {[
                   { key: "AADHAAR", label: "Aadhaar" },
                   { key: "PAN", label: "PAN" },
-                  { key: "DRIVING_LICENCE", label: "Driving Licence" },
+                  { key: "DRIVING_LICENSE", label: "Driving Licence" },
                   { key: "PASSPORT", label: "Passport" },
-                  { key: "RENTAL_AGREEMENT", label: "Rental Agreement" },
+                  { key: "AGREEMENT", label: "Rental Agreement" },
                 ].map(({ key, label }) => {
                   const isUploaded = docs.some((d) => d.type === key);
                   return (
@@ -1386,9 +1386,9 @@ function UploadDialog({
             >
               <option value="AADHAAR">Aadhaar</option>
               <option value="PAN">PAN</option>
-              <option value="DRIVING_LICENCE">Driving Licence</option>
+              <option value="DRIVING_LICENSE">Driving Licence</option>
               <option value="PASSPORT">Passport</option>
-              <option value="RENTAL_AGREEMENT">Rental Agreement</option>
+              <option value="AGREEMENT">Rental Agreement</option>
               <option value="OTHER">Other</option>
             </Select>
           </div>

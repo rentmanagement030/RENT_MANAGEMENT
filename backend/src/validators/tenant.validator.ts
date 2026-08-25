@@ -25,7 +25,14 @@ export const tenantCreateSchema = z.object({
 export const tenantUpdateSchema = tenantCreateSchema.partial();
 
 export const tenantDocumentSchema = z.object({
-  type: z.enum(["AADHAAR", "PAN", "PASSPORT", "DRIVING_LICENSE", "AGREEMENT", "PHOTOGRAPH", "PHOTO", "OTHER"]),
+  type: z.preprocess((val) => {
+    if (typeof val !== "string") return val;
+    const upper = val.toUpperCase().trim();
+    if (upper === "DRIVING_LICENCE" || upper === "DRIVING LICENSE" || upper === "DL") return "DRIVING_LICENSE";
+    if (upper === "RENTAL_AGREEMENT" || upper === "RENT_AGREEMENT" || upper === "LEASE_AGREEMENT") return "AGREEMENT";
+    if (upper === "PASSPORT_PHOTO" || upper === "PROFILE_PHOTO") return "PHOTO";
+    return upper;
+  }, z.enum(["AADHAAR", "PAN", "PASSPORT", "DRIVING_LICENSE", "AGREEMENT", "PHOTOGRAPH", "PHOTO", "OTHER"])),
 });
 
 export const familyMemberCreateSchema = z.object({
