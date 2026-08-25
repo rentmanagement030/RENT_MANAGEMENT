@@ -495,25 +495,37 @@ export async function listOutstanding(query: Record<string, unknown>) {
   const search = String(query.search ?? "").trim();
   const onlyOverdue = query.overdue === "true";
 
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
   const openBillWhere: Prisma.BillWhereInput = {
     status: { in: ["PENDING", "PARTIAL", "OVERDUE"] },
     outstanding: { gt: 0 },
+    billingMonth: { lte: currentMonthStr },
   };
 
   const tenantWhere: Prisma.TenantWhereInput = {
     status: { in: ["ACTIVE", "PENDING"] },
+    OR: [
+      { rentRecords: { some: { outstanding: { gt: 0 }, billingMonth: { lte: currentMonthStr } } } },
+      { bills: { some: openBillWhere } },
+    ],
     ...(search
       ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { phone: { contains: search } },
+          AND: [
+            {
+              OR: [
+                { name: { contains: search, mode: "insensitive" } },
+                { phone: { contains: search } },
+              ],
+            },
           ],
         }
       : {}),
     ...(onlyOverdue
       ? {
           OR: [
-            { rentRecords: { some: { status: "OVERDUE" } } },
+            { rentRecords: { some: { status: "OVERDUE", billingMonth: { lte: currentMonthStr } } } },
             { bills: { some: { ...openBillWhere, status: "OVERDUE" } } },
           ],
         }
@@ -526,7 +538,7 @@ export async function listOutstanding(query: Record<string, unknown>) {
       where: tenantWhere,
       include: {
         property: { select: { id: true, name: true, number: true } },
-        rentRecords: { select: { id: true, billingMonth: true, outstanding: true, status: true, dueDate: true } },
+        rentRecords: { where: { billingMonth: { lte: currentMonthStr } }, select: { id: true, billingMonth: true, outstanding: true, status: true, dueDate: true } },
         bills: { where: openBillWhere, select: { id: true, billNumber: true, billType: true, billingMonth: true, outstanding: true, status: true, dueDate: true }, orderBy: { billingMonth: "desc" } },
       },
       orderBy: { name: "asc" },
@@ -536,7 +548,7 @@ export async function listOutstanding(query: Record<string, unknown>) {
   ]);
 
   const items = tenants.map((t) => {
-    const unbilledRentRecords = t.rentRecords.filter((r) => gt(r.outstanding, 0) && !t.bills.some((b) => b.billingMonth === r.billingMonth && b.billType === "RENT"));
+    const unbilledRentRecords = t.rentRecords.filter((r) => gt(r.outstanding, 0) && r.billingMonth <= currentMonthStr && !t.bills.some((b) => b.billingMonth === r.billingMonth && b.billType === "RENT"));
 
     const rentOutstanding = unbilledRentRecords.reduce((sum, r) => add(sum, r.outstanding), zero());
     const billOutstanding = t.bills.reduce((sum, b) => add(sum, b.outstanding), zero());

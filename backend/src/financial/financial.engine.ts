@@ -32,11 +32,15 @@ export async function getPeriodFinancialSummaryEngine(filter: PeriodFilter = {})
   const collected = numberMoney(billedAgg._sum.paidAmount ?? zero());
   const periodOutstanding = numberMoney(billedAgg._sum.outstanding ?? zero());
 
-  // 2. Cumulative All-Time Outstanding Dues (All unpaid bills across all months)
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  // 2. Cumulative Current & Past Outstanding Dues (Excluding future unarrived months)
   const totalOutstandingAgg = await prisma.bill.aggregate({
     where: {
       status: { not: "CANCELLED" },
       outstanding: { gt: 0 },
+      billingMonth: { lte: currentMonthStr },
       ...propertyFilter,
     },
     _sum: { outstanding: true },
@@ -48,7 +52,7 @@ export async function getPeriodFinancialSummaryEngine(filter: PeriodFilter = {})
     prisma.bill.aggregate({
       where: {
         status: { in: ["PENDING", "PARTIAL"] },
-        ...(billingMonth ? { billingMonth } : {}),
+        billingMonth: billingMonth ? billingMonth : { lte: currentMonthStr },
         outstanding: { gt: 0 },
         ...propertyFilter,
       },
@@ -57,7 +61,7 @@ export async function getPeriodFinancialSummaryEngine(filter: PeriodFilter = {})
     prisma.bill.aggregate({
       where: {
         status: "OVERDUE",
-        ...(billingMonth ? { billingMonth } : {}),
+        billingMonth: billingMonth ? billingMonth : { lte: currentMonthStr },
         outstanding: { gt: 0 },
         ...propertyFilter,
       },
@@ -68,6 +72,7 @@ export async function getPeriodFinancialSummaryEngine(filter: PeriodFilter = {})
       where: {
         status: { not: "CANCELLED" },
         outstanding: { gt: 0 },
+        billingMonth: { lte: currentMonthStr },
         ...propertyFilter,
       },
     }).then((g) => g.length),

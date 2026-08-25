@@ -147,11 +147,14 @@ export function computeBillStatus(
 }
 
 export async function listBills(query: Record<string, unknown>) {
-  // Automatically generate current / queried month bills without waiting for manual action
+  // Automatically generate current / past month bills without waiting for manual action (Never future months)
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const billingMonth = query.billingMonth ? String(query.billingMonth) : undefined;
-  await generateMonthlyBills(billingMonth || currentMonth).catch(() => null);
+  const targetGenMonth = billingMonth || currentMonth;
+  if (targetGenMonth <= currentMonth) {
+    await generateMonthlyBills(targetGenMonth).catch(() => null);
+  }
 
   const { page, pageSize } = parsePagination(query);
   const tenantId = query.tenantId ? String(query.tenantId) : undefined;
