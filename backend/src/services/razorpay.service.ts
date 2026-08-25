@@ -158,7 +158,7 @@ export async function getOrCreatePaymentLinkForBill(billId: string): Promise<str
   if (amount.lessThanOrEqualTo(0)) return null;
 
   let orderId = `order_auto_${bill.id.slice(-8)}_${Date.now().toString(36)}`;
-  let payUrl = `${env.clientUrl}/admin/payments?action=new&tenantId=${bill.tenantId}&billId=${bill.id}`;
+  let payUrl = `${env.clientUrl}/tenant/login?billId=${bill.id}`;
 
   if (razorpayConfigured()) {
     try {
@@ -175,7 +175,7 @@ export async function getOrCreatePaymentLinkForBill(billId: string): Promise<str
         },
       });
       orderId = order.id;
-      payUrl = `${env.clientUrl}/admin/payments?orderId=${order.id}&billId=${bill.id}`;
+      payUrl = `${env.clientUrl}/tenant/login?orderId=${order.id}&billId=${bill.id}`;
     } catch (err) {
       logger.error("Razorpay order creation failed, using secure fallback link", { billId, error: String(err) });
     }

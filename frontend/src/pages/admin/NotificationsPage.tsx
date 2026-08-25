@@ -22,7 +22,9 @@ export default function NotificationsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["notifications", page, statusFilter],
-    queryFn: () => api.listNotifications({ page, pageSize: 10, status: statusFilter || undefined }),
+    queryFn: () => api.listNotifications({ page, pageSize: 15, status: statusFilter || undefined }),
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 
   const configStatus = useQuery({ queryKey: ["notification-status"], queryFn: () => api.notificationStatus() });
@@ -56,6 +58,18 @@ export default function NotificationsPage() {
     },
     onError: (e) => toastError("Resend error", e instanceof Error ? e.message : undefined),
   });
+
+  const handleCopyMessage = (text: string) => {
+    navigator.clipboard.writeText(text);
+    success("Message Copied", "Notification text copied to clipboard.");
+  };
+
+  const handleOpenWhatsApp = (phoneStr: string, bodyText: string) => {
+    const digits = phoneStr.replace(/[^0-9]/g, "");
+    const fullPhone = digits.length === 10 ? `91${digits}` : digits;
+    const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(bodyText)}`;
+    window.open(url, "_blank");
+  };
 
   const statuses = [
     { label: "All Statuses", value: "" },
@@ -111,7 +125,7 @@ export default function NotificationsPage() {
               <p className="font-black text-amber-950 text-sm">Delivery Channels Configuration Notice</p>
               <p className="font-semibold text-amber-900 leading-relaxed">
                 {!configStatus.data.whatsapp && "Meta WhatsApp Cloud API credentials not configured in backend/.env. "}
-                1-tap WhatsApp sharing links remain fully active for all admin users.
+                1-tap WhatsApp direct delivery is active on all notification cards below.
               </p>
             </div>
           </div>
@@ -136,59 +150,106 @@ export default function NotificationsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border border-slate-200 shadow-xs">
         <CardContent className="p-0">
           {isLoading ? (
             <PageLoader />
           ) : !data?.items.length ? (
-            <EmptyState icon={<Bell className="size-6" />} title="No notification logs" description="Automatic reminders will appear here when processed by the backend scheduler." />
+            <EmptyState icon={<Bell className="size-6" />} title="No notification logs" description="Automatic reminders and bills will appear here when processed by the backend scheduler." />
           ) : (
             <>
-              {/* Mobile Card List View */}
+              {/* Card List View */}
               <ul className="divide-y divide-slate-100">
-                {data.items.map((n) => (
-                  <li key={n.id} className="p-4 space-y-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-extrabold text-sm text-slate-900">{n.tenant?.name ?? n.to}</p>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
-                            {n.channel} · {n.type.replace(/_/g, " ")}
-                          </span>
+                {data.items.map((n) => {
+                  const channelColor =
+                    n.channel === "WHATSAPP"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : n.channel === "EMAIL"
+                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                      : "bg-purple-50 text-purple-700 border-purple-200";
+
+                  return (
+                    <li key={n.id} className="p-4 sm:p-5 space-y-3 hover:bg-slate-50/50 transition-colors">
+                      {/* Top Row: Name, Status Badge, Timestamp */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-extrabold text-sm sm:text-base text-slate-900 truncate">
+                            {n.tenant?.name ?? "Direct Recipient"}
+                          </p>
+                          <p className="text-xs text-slate-500 font-mono font-bold mt-0.5">{n.to}</p>
                         </div>
-                        <p className="text-[11px] text-slate-500 font-mono mt-0.5">{n.to}</p>
+                        <div className="text-right shrink-0">
+                          <StatusBadge status={n.status} />
+                          <p className="text-[10px] text-slate-400 font-bold mt-1">
+                            {formatDateTime(n.sentAt ?? n.createdAt)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <StatusBadge status={n.status} />
-                        <p className="text-[10px] text-slate-400 font-medium mt-1">{formatDateTime(n.sentAt ?? n.createdAt)}</p>
+
+                      {/* Tag Row: Channel & Notification Type */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border ${channelColor}`}>
+                          {n.channel}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                          {n.type.replace(/_/g, " ")}
+                        </span>
                       </div>
-                    </div>
 
-                    <p className="text-xs text-slate-800 bg-slate-50 border border-slate-200/80 rounded-xl p-3 font-sans leading-relaxed">
-                      {n.body}
-                    </p>
-
-                    {n.error && (
-                      <p className="text-xs font-mono text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1">
-                        Failure details: {n.error}
-                      </p>
-                    )}
-
-                    {n.status === "FAILED" && can(PERMISSIONS.NOTIFICATIONS_MANAGE) && (
-                      <div className="flex justify-end pt-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          loading={resendMutation.isPending}
-                          onClick={() => resendMutation.mutate(n.id)}
-                          className="border-rose-200 text-rose-700 hover:bg-rose-50"
-                        >
-                          <RefreshCw className="size-3.5" /> Resend Message
-                        </Button>
+                      {/* Message Content Bubble */}
+                      <div className="text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl p-3.5 font-sans leading-relaxed whitespace-pre-wrap break-words">
+                        {n.body}
                       </div>
-                    )}
-                  </li>
-                ))}
+
+                      {n.error && (
+                        <p className="text-xs font-mono font-medium text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-1.5">
+                          Failure details: {n.error}
+                        </p>
+                      )}
+
+                      {/* Action Row */}
+                      <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCopyMessage(n.body)}
+                            className="h-8 text-xs font-bold text-slate-700 border-slate-200 hover:bg-slate-100 rounded-lg px-2.5"
+                          >
+                            Copy Text
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {(n.channel === "WHATSAPP" || n.to.replace(/[^0-9]/g, "").length >= 10) && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleOpenWhatsApp(n.to, n.body)}
+                              className="h-8 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-3 shadow-xs flex items-center gap-1"
+                            >
+                              <Send className="size-3" /> Send via WhatsApp
+                            </Button>
+                          )}
+
+                          {n.status === "FAILED" && can(PERMISSIONS.NOTIFICATIONS_MANAGE) && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              loading={resendMutation.isPending}
+                              onClick={() => resendMutation.mutate(n.id)}
+                              className="h-8 text-xs font-bold border-rose-200 text-rose-700 hover:bg-rose-50 rounded-lg px-2.5"
+                            >
+                              <RefreshCw className="size-3 mr-1" /> Retry API
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
               <div className="border-t border-slate-100">
                 <Pagination page={data.page} totalPages={data.totalPages} total={data.total} onPageChange={setPage} />

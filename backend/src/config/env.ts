@@ -40,7 +40,10 @@ export const env = {
 
   clientUrl:
     process.env.CLIENT_URL ??
-    "http://localhost:5174",
+    process.env.FRONTEND_URL ??
+    (process.env.NODE_ENV === "production"
+      ? "https://rent-management-frontend-tawny.vercel.app"
+      : "https://rent-management-frontend-tawny.vercel.app"),
 
   /*
    * Frontend origins allowed to access the API.
@@ -50,7 +53,7 @@ export const env = {
    */
   corsOrigins: (
     process.env.CORS_ORIGINS ??
-    "http://localhost:5173,http://localhost:5174"
+    "http://localhost:5173,http://localhost:5174,https://rent-management-frontend-tawny.vercel.app"
   )
     .split(",")
     .map((origin) => origin.trim())

@@ -38,52 +38,16 @@ export async function sendWhatsAppMessage(
       },
     );
 
-    const data = (await res.json()) as { messages?: { id?: string }[]; error?: { message?: string } };
+    const data = (await res.json()) as { messages?: { id?: string }[]; error?: { message?: string; code?: number } };
 
-    // If Attempt 1 fails (e.g. outside 24h customer service window), attempt fallback with template
     if (!res.ok) {
-      logger.warn("WhatsApp text message send failed, trying template fallback...", {
+      const errMsg = data.error?.message || `WhatsApp API error (HTTP ${res.status})`;
+      logger.error("WhatsApp message send failed", {
         toPhone,
         status: res.status,
         error: data.error,
       });
-
-      const templateRes = await fetch(
-        `https://graph.facebook.com/v22.0/${env.whatsappPhoneNumberId}/messages`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${env.whatsappAccessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            to: phone,
-            type: "template",
-            template: {
-              name: "hello_world",
-              language: { code: "en_US" },
-            },
-          }),
-        },
-      );
-
-      const templateData = (await templateRes.json()) as {
-        messages?: { id?: string }[];
-        error?: { message?: string };
-      };
-
-      if (templateRes.ok) {
-        logger.info("WhatsApp template fallback succeeded", { toPhone, messageId: templateData.messages?.[0]?.id });
-        return { ok: true, messageId: templateData.messages?.[0]?.id };
-      }
-
-      logger.error("WhatsApp send failed for both text and template", {
-        toPhone,
-        textError: data.error,
-        templateError: templateData.error,
-      });
-      return { ok: false, error: data.error?.message ?? `HTTP ${res.status}` };
+      return { ok: false, error: errMsg };
     }
 
     return { ok: true, messageId: data.messages?.[0]?.id };
