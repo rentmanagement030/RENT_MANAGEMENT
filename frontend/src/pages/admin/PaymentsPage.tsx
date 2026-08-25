@@ -1489,11 +1489,13 @@ function PaymentDialog({
         }
       }
 
-      const allocations = selectedItems.map((item) => ({
-        billId: item.billId,
-        rentRecordId: item.rentRecordId,
-        amount: Number(item.allocatedAmount),
-      }));
+      const allocations = selectedItems
+        .filter((item) => Number(item.allocatedAmount) > 0)
+        .map((item) => ({
+          billId: item.billId || undefined,
+          rentRecordId: item.rentRecordId || undefined,
+          amount: Number(item.allocatedAmount),
+        }));
       const firstRentItem = selectedItems.find((i) => i.rentRecordId);
       const hasWaivedPenalty = selectedItems.some((i) => i.waivePenalty);
 
@@ -1502,9 +1504,9 @@ function PaymentDialog({
         amount: method === "cash" ? totalReceived : totalPayable,
         paymentDate: paymentDate || undefined,
         notes: notes ? `Purpose: ${dynamicPurpose} | ${notes}` : `Purpose: ${dynamicPurpose}`,
-        rentRecordId: firstRentItem?.rentRecordId,
+        rentRecordId: firstRentItem?.rentRecordId || undefined,
         waivePenalty: hasWaivedPenalty,
-        allocations,
+        allocations: allocations.length > 0 ? allocations : undefined,
       };
 
       if (method === "cash") {
