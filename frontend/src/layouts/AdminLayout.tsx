@@ -394,7 +394,7 @@ export function AdminLayout() {
         )}
       >
         {/* TOP HEADER WITH DYNAMIC BREADCRUMB PAGE CONTEXT */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200/90 bg-white/95 backdrop-blur-md px-4 lg:px-6 shadow-xs">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200/90 bg-white/95 backdrop-blur-md px-4 lg:px-6 shadow-xs">
           <div className="flex items-center gap-3">
             <button
               className="flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 lg:hidden active:scale-95 transition-transform min-h-[44px] min-w-[44px]"

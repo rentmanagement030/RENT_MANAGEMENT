@@ -1,4 +1,5 @@
-import React, { forwardRef, useState, useRef, useEffect, useMemo, Children, isValidElement } from "react";
+import React, { forwardRef, useState, useRef, useEffect, useLayoutEffect, useMemo, Children, isValidElement } from "react";
+import { createPortal } from "react-dom";
 import { cva, type VariantProps } from "class-variance-authority";
 import { ChevronDown, Loader2, Check, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -156,11 +157,41 @@ export function Select({
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const options = useMemo(() => parseSelectChildren(children), [children]);
 
   const currentValue = value !== undefined ? String(value) : (defaultValue !== undefined ? String(defaultValue) : (options[0]?.value ?? ""));
   const selectedOption = options.find((o) => o.value === currentValue) || options[0];
+
+  const updatePosition = () => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const spaceBelow = vh - rect.bottom;
+    const estimatedHeight = Math.min(260, 50 + (options.length * 36));
+
+    let top = rect.bottom + 6;
+    if (spaceBelow < estimatedHeight && rect.top > estimatedHeight) {
+      top = rect.top - estimatedHeight - 6;
+    }
+    setDropdownPos({
+      top: Math.max(8, top),
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - rect.width - 8)),
+      width: Math.min(rect.width, window.innerWidth - 16),
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [isOpen, options.length]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -232,8 +263,18 @@ export function Select({
         <ChevronDown className={cn("size-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2", isOpen && "rotate-180 text-blue-600")} />
       </button>
 
-      {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl max-h-64 overflow-hidden flex flex-col text-xs animate-in fade-in zoom-in-95 duration-150">
+      {isOpen && dropdownPos && createPortal(
+        <div
+          style={{
+            position: "fixed",
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            width: dropdownPos.width,
+            zIndex: 99999,
+          }}
+          className="rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl max-h-64 overflow-hidden flex flex-col text-xs animate-in fade-in zoom-in-95 duration-150"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           {options.length > 5 && (
             <div className="p-1 mb-1 border-b border-slate-100 shrink-0">
               <div className="relative">
@@ -277,7 +318,8 @@ export function Select({
               })
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

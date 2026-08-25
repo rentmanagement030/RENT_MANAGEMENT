@@ -132,8 +132,38 @@ function RentOkFilterDropdown({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const selectedOption = useMemo(() => options.find((o) => o.value === value) || options[0], [options, value]);
+
+  const updatePos = () => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const spaceBelow = vh - rect.bottom;
+    const estimatedHeight = Math.min(240, 20 + options.length * 40);
+
+    let top = rect.bottom + 6;
+    if (spaceBelow < estimatedHeight && rect.top > estimatedHeight) {
+      top = rect.top - estimatedHeight - 6;
+    }
+    setPos({
+      top: Math.max(8, top),
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - rect.width - 8)),
+      width: Math.min(rect.width, window.innerWidth - 16),
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    updatePos();
+    window.addEventListener("scroll", updatePos, true);
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", updatePos, true);
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [open, options.length]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -141,9 +171,18 @@ function RentOkFilterDropdown({
         setOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
 
   return (
     <div ref={ref} className="relative w-full">
@@ -162,8 +201,18 @@ function RentOkFilterDropdown({
         <ChevronDown className={cn("size-4 shrink-0 text-slate-400 transition-transform duration-200", open && "rotate-180")} />
       </button>
 
-      {open && (
-        <div className="absolute left-0 right-0 top-full z-[100] mt-1.5 max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in-50 zoom-in-95">
+      {open && pos && createPortal(
+        <div
+          style={{
+            position: "fixed",
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            zIndex: 99999,
+          }}
+          className="max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in-50 zoom-in-95"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           {options.map((opt) => {
             const isSelected = opt.value === value;
             return (
@@ -189,7 +238,8 @@ function RentOkFilterDropdown({
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
