@@ -32,7 +32,7 @@ import {
   User,
   Link2,
 } from "lucide-react";
-import { api, downloadUrl } from "@/lib/api";
+import { api, downloadBlobFile, downloadUrl } from "@/lib/api";
 import { formatINR, formatDate, formatPropertyType } from "@/lib/format";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { usePageResetOnFilter } from "@/hooks/usePageResetOnFilter";
@@ -986,15 +986,14 @@ function AgreementActionMenu({
             </button>
 
             {/* DOWNLOAD PDF */}
-            <a
-              href={docUrl}
-              download={`Agreement-${agrNo}.pdf`}
+            <button
+              type="button"
               onMouseDown={(e) => e.stopPropagation()}
-              onClick={() => close()}
+              onClick={(e) => handleAction(e, () => downloadBlobFile(docUrl, `Agreement-${agrNo}.pdf`))}
               className="flex w-full items-center gap-2.5 px-3 min-h-[36px] font-bold text-slate-700 hover:bg-slate-100 transition-colors text-left"
             >
               <Download className="size-4 text-slate-400 shrink-0" /> Download {isSigned ? "Signed PDF" : "PDF"}
-            </a>
+            </button>
 
             {/* NOT SIGNED SPECIFIC ACTIONS */}
             {!isSigned && status !== "CANCELLED" && (

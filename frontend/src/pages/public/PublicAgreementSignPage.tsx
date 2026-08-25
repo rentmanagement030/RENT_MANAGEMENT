@@ -19,7 +19,7 @@ import {
   Phone,
   FileCheck,
 } from "lucide-react";
-import { api, downloadUrl } from "@/lib/api";
+import { api, downloadBlobFile, downloadUrl } from "@/lib/api";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, PageLoader } from "@/components/ui/primitives";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/overlay";
@@ -312,13 +312,13 @@ export default function PublicAgreementSignPage() {
               >
                 <Eye className="size-4" /> View Signed Agreement
               </Button>
-              <a
-                href={docUrl}
-                download={`Signed-Agreement-${agrNo}.pdf`}
+              <button
+                type="button"
+                onClick={() => downloadBlobFile(docUrl, `Signed-Agreement-${agrNo}.pdf`)}
                 className="inline-flex h-11 items-center justify-center gap-2 px-5 bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-100 font-extrabold text-xs rounded-xl transition-all"
               >
                 <Download className="size-4 text-emerald-700" /> Download Signed PDF
-              </a>
+              </button>
             </div>
           </Card>
         ) : (
@@ -383,13 +383,13 @@ export default function PublicAgreementSignPage() {
                     >
                       <Eye className="size-3.5 mr-1" /> Open Full Document
                     </Button>
-                    <a
-                      href={docUrl}
-                      download={`Agreement-${agrNo}.pdf`}
+                    <button
+                      type="button"
+                      onClick={() => downloadBlobFile(docUrl, `Agreement-${agrNo}.pdf`)}
                       className="inline-flex h-8 items-center gap-1 px-3 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors"
                     >
                       <Download className="size-3.5" /> Download PDF
-                    </a>
+                    </button>
                   </div>
                 </div>
 
