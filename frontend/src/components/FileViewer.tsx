@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Download, FileText, Loader2, Maximize, Minimize, Printer, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/primitives";
-import { downloadUrl } from "@/lib/api";
+import { downloadUrl, getAuthToken } from "@/lib/api";
 
 interface FileViewerProps {
   open: boolean;
@@ -55,7 +55,16 @@ export default function FileViewer({ open, name, url, onClose }: FileViewerProps
     setLoading(true);
     setLoadError(null);
 
-    fetch(resolvedUrl)
+    const token = getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    fetch(resolvedUrl, {
+      headers,
+      credentials: "include",
+    })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         return res.blob();

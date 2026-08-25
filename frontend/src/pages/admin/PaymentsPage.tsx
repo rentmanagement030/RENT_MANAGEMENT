@@ -774,7 +774,7 @@ export default function PaymentsPage() {
                             payment={p}
                             canVerify={can(PERMISSIONS.PAYMENTS_VERIFY)}
                             canReadReceipt={can(PERMISSIONS.RECEIPTS_READ)}
-                            onReceipt={() => setReceipt({ url: downloadUrl(`/payments/${p.id}/receipt`), name: `Receipt-${p.receiptNumber ?? p.id}.pdf` })}
+                            onReceipt={() => setReceipt({ url: `/payments/${p.id}/receipt`, name: `Receipt-${p.receiptNumber ?? p.id}.pdf` })}
                             onVerify={() => api.verifyBank(p.id, { status: "VERIFIED" }).then(() => { success("Payment verified"); invalidate(); })}
                             onReject={() => api.verifyBank(p.id, { status: "REJECTED" }).then(() => { success("Payment rejected"); invalidate(); })}
                             activeMenuId={activeMenuId}
@@ -872,7 +872,7 @@ export default function PaymentsPage() {
                                 payment={p}
                                 canVerify={can(PERMISSIONS.PAYMENTS_VERIFY)}
                                 canReadReceipt={can(PERMISSIONS.RECEIPTS_READ)}
-                                onReceipt={() => setReceipt({ url: downloadUrl(`/payments/${p.id}/receipt`), name: `Receipt-${p.receiptNumber ?? p.id}.pdf` })}
+                                onReceipt={() => setReceipt({ url: `/payments/${p.id}/receipt`, name: `Receipt-${p.receiptNumber ?? p.id}.pdf` })}
                                 onVerify={() => api.verifyBank(p.id, { status: "VERIFIED" }).then(() => { success("Payment verified"); invalidate(); })}
                                 onReject={() => api.verifyBank(p.id, { status: "REJECTED" }).then(() => { success("Payment rejected"); invalidate(); })}
                                 activeMenuId={activeMenuId}

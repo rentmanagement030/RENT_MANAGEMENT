@@ -453,13 +453,19 @@ export const api = {
 /** Build an absolute URL (with auth token query param) for binary downloads served by the API. */
 export function downloadUrl(path: string): string {
   if (!path) return "";
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  const token = getAuthToken();
+  const sep = path.includes("?") ? "&" : "?";
+  const authParam = token ? `${sep}token=${encodeURIComponent(token)}` : "";
+
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    if (!path.includes("token=") && token) {
+      return `${path}${authParam}`;
+    }
+    return path;
+  }
   let cleanPath = path;
   if (!cleanPath.startsWith("/")) cleanPath = "/" + cleanPath;
   if (cleanPath.startsWith("/api/")) cleanPath = cleanPath.slice(4);
-  const token = getAuthToken();
-  const sep = cleanPath.includes("?") ? "&" : "?";
-  const authParam = token ? `${sep}token=${encodeURIComponent(token)}` : "";
   return `${BASE}${cleanPath}${authParam}`;
 }
 
