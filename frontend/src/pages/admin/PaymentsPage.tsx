@@ -559,36 +559,40 @@ export default function PaymentsPage() {
         title="Payment Records & Collections"
         description="Record and manage tenant payments, verify transfers, and maintain accurate collection records."
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:gap-2">
             <Button
               variant="outline"
               onClick={handleExportExcel}
               loading={exporting}
-              className="h-10 px-3.5 rounded-xl font-bold text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs"
+              className="h-10 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center justify-center truncate w-full"
             >
-              <Download className="size-4 mr-1.5 text-slate-500" /> Export Report
+              <Download className="size-3.5 sm:size-4 mr-1 sm:mr-1.5 text-slate-500 shrink-0" />
+              <span className="truncate">Export Report</span>
             </Button>
             {can(PERMISSIONS.PAYMENTS_CREATE) && (
               <>
                 <Button
                   onClick={() => setCashOpen(true)}
-                  className="h-10 px-4 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-2xs cursor-pointer"
+                  className="h-10 px-2 sm:px-4 rounded-xl font-bold text-[11px] sm:text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-2xs cursor-pointer flex items-center justify-center truncate w-full"
                 >
-                  <Banknote className="size-4 mr-1.5" /> Record Payment
+                  <Banknote className="size-3.5 sm:size-4 mr-1 sm:mr-1.5 shrink-0" />
+                  <span className="truncate">Record Payment</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setBankOpen(true)}
-                  className="h-10 px-3.5 rounded-xl font-bold text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs"
+                  className="h-10 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center justify-center truncate w-full"
                 >
-                  <Landmark className="size-4 mr-1.5 text-slate-500" /> Record Bank / DD
+                  <Landmark className="size-3.5 sm:size-4 mr-1 sm:mr-1.5 text-slate-500 shrink-0" />
+                  <span className="truncate">Record Bank / DD</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setRazorpayOpen(true)}
-                  className="h-10 px-3.5 rounded-xl font-bold text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs"
+                  className="h-10 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center justify-center truncate w-full"
                 >
-                  <Link2 className="size-4 mr-1.5 text-slate-500" /> Send Payment Link
+                  <Link2 className="size-3.5 sm:size-4 mr-1 sm:mr-1.5 text-slate-500 shrink-0" />
+                  <span className="truncate">Send Payment Link</span>
                 </Button>
               </>
             )}

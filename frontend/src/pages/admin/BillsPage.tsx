@@ -526,28 +526,31 @@ export default function BillsPage() {
         </div>
 
         {can(PERMISSIONS.RENT_MANAGE) && (
-          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          <div className="grid grid-cols-3 gap-2 w-full sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
             <Button
               onClick={() => setCreateOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 px-4 rounded-xl shadow-xs active:scale-95 transition-all text-xs"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 sm:h-11 px-2 sm:px-4 rounded-xl shadow-xs active:scale-95 transition-all text-[11px] sm:text-xs flex items-center justify-center truncate w-full"
             >
-              <Plus className="size-4 stroke-[2.5]" /> Create Bill
+              <Plus className="size-3.5 sm:size-4 stroke-[2.5] shrink-0" />
+              <span className="truncate ml-1">Create Bill</span>
             </Button>
 
             <Button
               variant="outline"
               onClick={() => setBatchOpen(true)}
-              className="font-bold text-xs rounded-xl h-11 px-4 border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              className="font-bold text-[11px] sm:text-xs rounded-xl h-10 sm:h-11 px-2 sm:px-4 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 flex items-center justify-center truncate w-full"
             >
-              <Layers className="size-4 text-slate-500 mr-1.5" /> Batch Bills
+              <Layers className="size-3.5 sm:size-4 text-slate-500 mr-1 shrink-0" />
+              <span className="truncate">Batch Bills</span>
             </Button>
 
             <Button
               variant="outline"
               onClick={() => setAutoGenOpen(true)}
-              className="font-bold text-xs rounded-xl h-11 px-4 border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              className="font-bold text-[11px] sm:text-xs rounded-xl h-10 sm:h-11 px-2 sm:px-4 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 flex items-center justify-center truncate w-full"
             >
-              <Sparkles className="size-4 text-slate-500 mr-1.5" /> Auto Generate
+              <Sparkles className="size-3.5 sm:size-4 text-slate-500 mr-1 shrink-0" />
+              <span className="truncate">Auto Generate</span>
             </Button>
           </div>
         )}

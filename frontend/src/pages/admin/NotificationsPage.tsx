@@ -73,15 +73,31 @@ export default function NotificationsPage() {
         description="Audit log of backend automatic rent reminders, payment links, and WhatsApp deliveries."
         actions={
           can(PERMISSIONS.NOTIFICATIONS_MANAGE) ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" loading={testSchedulerMutation.isPending} onClick={() => testSchedulerMutation.mutate()}>
-                <Play className="size-3.5 text-emerald-400" /> Run Auto Scheduler Test
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
+              <Button
+                variant="outline"
+                loading={testSchedulerMutation.isPending}
+                onClick={() => testSchedulerMutation.mutate()}
+                className="h-10 px-2 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center justify-center truncate w-full"
+              >
+                <Play className="size-3.5 mr-1 text-emerald-500 shrink-0" />
+                <span className="truncate">Scheduler Test</span>
               </Button>
-              <Button variant="outline" size="sm" loading={triggerMutation.isPending} onClick={() => triggerMutation.mutate()}>
-                <BellRing className="size-3.5" /> Force Queue
+              <Button
+                variant="outline"
+                loading={triggerMutation.isPending}
+                onClick={() => triggerMutation.mutate()}
+                className="h-10 px-2 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center justify-center truncate w-full"
+              >
+                <BellRing className="size-3.5 mr-1 text-slate-500 shrink-0" />
+                <span className="truncate">Force Queue</span>
               </Button>
-              <Button size="sm" onClick={() => setComposing(true)}>
-                <Send className="size-3.5" /> Send Manual Message
+              <Button
+                onClick={() => setComposing(true)}
+                className="col-span-2 sm:col-auto h-10 px-3 sm:px-4 rounded-xl font-bold text-[11px] sm:text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-2xs flex items-center justify-center truncate w-full sm:w-auto"
+              >
+                <Send className="size-3.5 mr-1 shrink-0" />
+                <span className="truncate">Send Manual Message</span>
               </Button>
             </div>
           ) : undefined

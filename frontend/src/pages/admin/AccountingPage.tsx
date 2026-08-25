@@ -229,164 +229,172 @@ export default function AccountingPage() {
         title="Accounting & P&L"
         description="Track revenue, collections, expenses and profitability across your rental portfolio."
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Property Filter */}
-            <div className="w-48 sm:w-56">
-              <FilterSelect
-                icon={Building2}
-                value={selectedPropertyId}
-                onChange={(e) => setSelectedPropertyId(e.target.value)}
+          <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row md:items-center">
+            {/* Filter Row: 50% each on mobile, auto on desktop */}
+            <div className="grid grid-cols-2 gap-2 w-full md:w-auto">
+              {/* Property Filter */}
+              <div className="w-full md:w-52">
+                <FilterSelect
+                  icon={Building2}
+                  value={selectedPropertyId}
+                  onChange={(e) => setSelectedPropertyId(e.target.value)}
+                  className="h-10 text-xs font-bold w-full rounded-xl"
+                >
+                  <option value="">All Properties</option>
+                  {propertiesList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </FilterSelect>
+              </div>
+
+              {/* Month Filter */}
+              <div className="flex items-center justify-between gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 h-10 text-xs font-bold text-slate-700 shadow-2xs w-full md:w-auto">
+                <div className="flex items-center gap-1.5 min-w-0 w-full">
+                  <Calendar className="size-3.5 text-slate-400 shrink-0" />
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer text-xs w-full"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Export Buttons Row: 50% each on mobile, auto on desktop */}
+            <div className="grid grid-cols-2 gap-2 w-full md:w-auto">
+              <Button
+                variant="outline"
+                className="h-10 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center justify-center truncate w-full"
+                onClick={() =>
+                  window.open(
+                    downloadUrl(
+                      `/ops/reports/collection/export?from=${dateRange.from || ""}&to=${dateRange.to || ""}&propertyId=${selectedPropertyId}`
+                    ),
+                    "_blank"
+                  )
+                }
               >
-                <option value="">All Properties</option>
-                {propertiesList.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </FilterSelect>
+                <FileSpreadsheet className="size-3.5 mr-1 text-emerald-600 shrink-0" />
+                <span className="truncate">Export Excel</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-10 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs border-slate-300 text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center justify-center truncate w-full"
+                onClick={() => window.open(downloadUrl("/ops/reports/outstanding/export"), "_blank")}
+              >
+                <Download className="size-3.5 mr-1 text-blue-600 shrink-0" />
+                <span className="truncate">Export PDF</span>
+              </Button>
             </div>
-
-            {/* Month Filter */}
-            <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-700 shadow-2xs">
-              <Calendar className="size-3.5 text-slate-400 shrink-0" />
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer"
-              />
-            </div>
-
-            {/* Report Export Buttons */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() =>
-                window.open(
-                  downloadUrl(
-                    `/ops/reports/collection/export?from=${dateRange.from || ""}&to=${dateRange.to || ""}&propertyId=${selectedPropertyId}`
-                  ),
-                  "_blank"
-                )
-              }
-            >
-              <FileSpreadsheet className="size-3.5 text-emerald-600" /> Export Excel
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => window.open(downloadUrl("/ops/reports/outstanding/export"), "_blank")}
-            >
-              <Download className="size-3.5 text-blue-600" /> Export PDF
-            </Button>
           </div>
         }
       />
 
-      {/* PRIMARY FINANCIAL KPIs */}
+      {/* PRIMARY FINANCIAL KPIs (2x2 Grid on Mobile, 4-col on Desktop) */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="p-4 space-y-3">
-              <Skeleton className="h-3 w-28" />
-              <Skeleton className="h-7 w-36" />
-              <Skeleton className="h-3 w-24" />
+            <Card key={i} className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+              <Skeleton className="h-3 w-20 sm:w-28" />
+              <Skeleton className="h-6 sm:h-7 w-28 sm:w-36" />
+              <Skeleton className="h-3 w-16 sm:w-24" />
             </Card>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
           {/* KPI 1: TOTAL / EXPECTED REVENUE */}
-          <Card className="border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-slate-300">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+          <Card className="border border-slate-200/90 bg-white p-3 sm:p-5 shadow-xs transition-all hover:border-slate-300 flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-500 truncate">
                 {totalCollected > 0 ? "COLLECTED REVENUE" : "EXPECTED REVENUE"}
               </span>
-              <div className="flex size-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                <Wallet className="size-4" />
+              <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <Wallet className="size-3.5 sm:size-4" />
               </div>
             </div>
-            <div className="mt-3 text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <div className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight truncate">
               {formatINR(totalCollected > 0 ? totalCollected : totalRevenue)}
             </div>
-            <div className="mt-1.5 text-xs font-semibold text-slate-500">
+            <div className="mt-1 text-[11px] sm:text-xs font-semibold text-slate-500 truncate">
               {totalCollected > 0
-                ? `${periodLabel} (${formatINR(totalRevenue)} expected)`
-                : `${periodLabel} (Projected potential)`}
+                ? `${periodLabel}`
+                : `${periodLabel} (Projected)`}
             </div>
           </Card>
 
           {/* KPI 2: TOTAL COLLECTED */}
-          <Card className="border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-slate-300">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+          <Card className="border border-slate-200/90 bg-white p-3 sm:p-5 shadow-xs transition-all hover:border-slate-300 flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-500 truncate">
                 TOTAL COLLECTED
               </span>
-              <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                <CheckCircle2 className="size-4" />
+              <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <CheckCircle2 className="size-3.5 sm:size-4" />
               </div>
             </div>
-            <div className="mt-3 text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">
+            <div className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-black text-emerald-600 tracking-tight truncate">
               {formatINR(totalCollected)}
             </div>
-            <div className="mt-1.5 text-xs font-semibold text-emerald-700 flex items-center gap-1">
-              <ArrowUpRight className="size-3.5" />
-              {collectionRate.toFixed(1)}% collection rate
+            <div className="mt-1 text-[11px] sm:text-xs font-semibold text-emerald-700 flex items-center gap-1 truncate">
+              <ArrowUpRight className="size-3 sm:size-3.5 shrink-0" />
+              <span>{collectionRate.toFixed(1)}% collected</span>
             </div>
           </Card>
 
           {/* KPI 3: TOTAL EXPENSES */}
-          <Card className="border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-slate-300">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+          <Card className="border border-slate-200/90 bg-white p-3 sm:p-5 shadow-xs transition-all hover:border-slate-300 flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-500 truncate">
                 TOTAL EXPENSES
               </span>
-              <div className="flex size-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                <TrendingDown className="size-4" />
+              <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                <TrendingDown className="size-3.5 sm:size-4" />
               </div>
             </div>
-            <div className="mt-3 text-2xl sm:text-3xl font-black text-amber-600 tracking-tight">
+            <div className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-black text-amber-600 tracking-tight truncate">
               {formatINR(totalExpenses)}
             </div>
-            <div className="mt-1.5 text-xs font-semibold text-slate-500">
+            <div className="mt-1 text-[11px] sm:text-xs font-semibold text-slate-500 truncate">
               Operating expenses
             </div>
           </Card>
 
           {/* KPI 4: NET OPERATING PROFIT */}
           <Card
-            className={`border p-5 shadow-xs transition-all hover:border-slate-300 ${
+            className={`border p-3 sm:p-5 shadow-xs transition-all hover:border-slate-300 flex flex-col justify-between ${
               netOperatingProfit >= 0
                 ? "border-emerald-200/80 bg-emerald-50/20"
                 : "border-rose-200/80 bg-rose-50/20"
             }`}
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                NET OPERATING PROFIT
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-500 truncate">
+                NET PROFIT
               </span>
               <div
-                className={`flex size-8 items-center justify-center rounded-lg ${
+                className={`flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg ${
                   netOperatingProfit >= 0
                     ? "bg-emerald-100 text-emerald-700"
                     : "bg-rose-100 text-rose-700"
                 }`}
               >
-                <TrendingUp className="size-4" />
+                <TrendingUp className="size-3.5 sm:size-4" />
               </div>
             </div>
             <div
-              className={`mt-3 text-2xl sm:text-3xl font-black tracking-tight ${
+              className={`mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-black tracking-tight truncate ${
                 netOperatingProfit >= 0 ? "text-emerald-700" : "text-rose-700"
               }`}
             >
               {formatINR(netOperatingProfit)}
             </div>
-            <div className="mt-1.5 text-xs font-semibold text-slate-600">
-              Revenue minus expenses
+            <div className="mt-1 text-[11px] sm:text-xs font-semibold text-slate-600 truncate">
+              Revenue - expenses
             </div>
           </Card>
         </div>

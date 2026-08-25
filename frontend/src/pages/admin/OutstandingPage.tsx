@@ -164,34 +164,34 @@ export default function OutstandingPage() {
         }
       />
 
-      {/* 2. Financial Summary Row (4 Compact KPI Cards) */}
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+      {/* 2. Financial Summary Row (2x2 Grid on Mobile, 4-col on Desktop) */}
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:grid-cols-4">
         {/* TOTAL OUTSTANDING */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">TOTAL OUTSTANDING</span>
-          <div className="text-2xl sm:text-3xl font-black text-slate-900">{formatINR(kpiSummary.totalOutstanding)}</div>
-          <span className="text-xs font-semibold text-slate-500 block">Across open dues</span>
+        <div className="bg-white rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-2xs space-y-1 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block truncate">TOTAL OUTSTANDING</span>
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate">{formatINR(kpiSummary.totalOutstanding)}</div>
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Across open dues</span>
         </div>
 
         {/* OVERDUE BALANCES */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 block">OVERDUE BALANCES</span>
-          <div className="text-2xl sm:text-3xl font-black text-rose-600">{formatINR(kpiSummary.overdueTotal)}</div>
-          <span className="text-xs font-semibold text-rose-700/80 block">Passed due date</span>
+        <div className="bg-white rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-2xs space-y-1 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-rose-700 block truncate">OVERDUE BALANCES</span>
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-rose-600 truncate">{formatINR(kpiSummary.overdueTotal)}</div>
+          <span className="text-[11px] sm:text-xs font-semibold text-rose-700/80 block truncate">Passed due date</span>
         </div>
 
         {/* PENDING BALANCES */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 block">PENDING BALANCES</span>
-          <div className="text-2xl sm:text-3xl font-black text-amber-600">{formatINR(kpiSummary.pendingTotal)}</div>
-          <span className="text-xs font-semibold text-amber-700/80 block">Upcoming / Current cycle</span>
+        <div className="bg-white rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-2xs space-y-1 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-700 block truncate">PENDING BALANCES</span>
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-amber-600 truncate">{formatINR(kpiSummary.pendingTotal)}</div>
+          <span className="text-[11px] sm:text-xs font-semibold text-amber-700/80 block truncate">Upcoming cycle</span>
         </div>
 
         {/* TENANTS WITH DUES */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700 block">TENANTS WITH DUES</span>
-          <div className="text-2xl sm:text-3xl font-black text-blue-600">{kpiSummary.tenantCount} Residents</div>
-          <span className="text-xs font-semibold text-slate-500 block">{kpiSummary.recordCount} unpaid records</span>
+        <div className="bg-white rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-2xs space-y-1 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-blue-700 block truncate">TENANTS WITH DUES</span>
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-blue-600 truncate">{kpiSummary.tenantCount} Residents</div>
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">{kpiSummary.recordCount} unpaid records</span>
         </div>
       </div>
 
