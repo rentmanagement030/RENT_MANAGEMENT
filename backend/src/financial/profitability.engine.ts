@@ -86,7 +86,9 @@ export async function computePropertyProfitability(filter: PeriodFilter = {}): P
 
   const rows: PropertyProfitabilityRow[] = properties.map((p) => {
     const bStats = billMap.get(p.id) || { amount: 0, paid: 0, outstanding: 0 };
-    const propExpenses = expenseMap.get(p.id) || 0;
+    const propDirectExpenses = expenseMap.get(p.id) || 0;
+    const propAllocatedUnallocated = properties.length > 0 && unallocatedExpenses > 0 ? (unallocatedExpenses / properties.length) : 0;
+    const propExpenses = propDirectExpenses + propAllocatedUnallocated;
 
     const expectedIncome = bStats.amount;
     const collectedIncome = bStats.paid;
@@ -111,6 +113,7 @@ export async function computePropertyProfitability(filter: PeriodFilter = {}): P
       collectedIncome,
       totalOutstanding,
       operatingExpenses: propExpenses,
+      totalExpenses: propExpenses,
       capitalExpenses: 0,
       netIncome,
       collectionRate,

@@ -100,6 +100,11 @@ export default function ExpensesPage() {
         expenseDate: new Date().toISOString().slice(0, 10),
       });
       qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: ["expensesSummaryEngine"] });
+      qc.invalidateQueries({ queryKey: ["profitabilityReport"] });
+      qc.invalidateQueries({ queryKey: ["expensesReportAccounting"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["dashboardDataAccounting"] });
     },
     onError: (e) => toastError("Failed to add expense", e instanceof Error ? e.message : undefined),
   });

@@ -88,6 +88,8 @@ export default function AccountingPage() {
         from: dateRange.from,
         to: dateRange.to,
       }),
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 
   // Query 3: Real Operating Expenses
@@ -103,6 +105,8 @@ export default function AccountingPage() {
         from: dateRange.from,
         to: dateRange.to,
       }),
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
   const expensesList = expensesData?.items ?? [];
 
@@ -110,6 +114,8 @@ export default function AccountingPage() {
   const { data: dashboardData } = useQuery({
     queryKey: ["dashboardDataAccounting"],
     queryFn: () => api.dashboard(),
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 
   // Financial Metrics Aggregations
@@ -118,7 +124,7 @@ export default function AccountingPage() {
 
   const totalRevenue = summary?.expectedIncome ?? 0;
   const totalCollected = summary?.collectedIncome ?? 0;
-  const totalExpenses = summary?.totalExpenses ?? 0;
+  const totalExpenses = summary?.totalExpenses ?? summary?.operatingExpenses ?? 0;
   const totalOutstanding = summary?.totalOutstanding ?? 0;
   const netOperatingProfit = summary?.netIncome ?? (totalCollected - totalExpenses);
 
@@ -168,13 +174,18 @@ export default function AccountingPage() {
   // Chart Data for Revenue vs Expenses
   const chartData = useMemo(() => {
     if (propertyRows.length > 0) {
-      const raw = propertyRows.map((p) => ({
-        name: p.propertyName.length > 16 ? `${p.propertyName.slice(0, 16)}...` : p.propertyName,
-        fullName: p.propertyName,
-        Revenue: p.collectedIncome > 0 ? p.collectedIncome : p.expectedIncome,
-        Expenses: p.totalExpenses,
-        NetProfit: p.netIncome,
-      }));
+      const raw = propertyRows.map((p) => {
+        const rev = p.collectedIncome > 0 ? p.collectedIncome : p.expectedIncome;
+        const exp = (p as any).totalExpenses ?? (p as any).operatingExpenses ?? 0;
+        const net = (p as any).netIncome !== undefined ? (p as any).netIncome : (rev - exp);
+        return {
+          name: p.propertyName.length > 16 ? `${p.propertyName.slice(0, 16)}...` : p.propertyName,
+          fullName: p.propertyName,
+          Revenue: rev,
+          Expenses: exp,
+          NetProfit: net,
+        };
+      });
       return showAllPropertiesInChart ? raw : raw.slice(0, 5);
     }
     return [
