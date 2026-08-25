@@ -14,7 +14,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { api, flattenOutstanding } from "@/lib/api";
-import { formatINR } from "@/lib/format";
+import { currentMonth, formatINR } from "@/lib/format";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/auth/AuthContext";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -94,6 +94,7 @@ export default function OutstandingPage() {
   const [search, setSearch] = useState("");
   const [overdueOnly, setOverdueOnly] = useState(false);
   const debouncedSearch = useDebouncedValue(search);
+  const currMonth = currentMonth();
 
   const { data, isLoading } = useQuery({
     queryKey: ["outstanding", debouncedSearch, overdueOnly],
@@ -103,7 +104,8 @@ export default function OutstandingPage() {
   const rows = flattenOutstanding(data?.items ?? []);
 
   const filteredRows = useMemo(() => {
-    let list = rows;
+    // Strictly filter out any unarrived future billing months (e.g. Sep 2026, Oct 2026)
+    let list = rows.filter((r) => !r.billingMonth || r.billingMonth <= currMonth);
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
       list = list.filter((r) =>
@@ -118,7 +120,7 @@ export default function OutstandingPage() {
       list = list.filter((r) => (r.status || "").toUpperCase() === "OVERDUE");
     }
     return list;
-  }, [rows, debouncedSearch, overdueOnly]);
+  }, [rows, debouncedSearch, overdueOnly, currMonth]);
 
   // Compute KPI Financial Summary from existing rows
   const kpiSummary = useMemo(() => {
