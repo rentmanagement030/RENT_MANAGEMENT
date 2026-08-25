@@ -1,6 +1,11 @@
 import { NotificationChannel, NotificationType, NotificationStatus, Prisma, JobType, BillType } from "@prisma/client";
 import { prisma } from "../config/prisma";
-import { sendWhatsAppMessage, paymentConfirmationBody } from "./whatsapp.service";
+import {
+  sendWhatsAppMessage,
+  paymentConfirmationBody,
+  billGeneratedBody,
+  rentOutstandingReminderBody,
+} from "./whatsapp.service";
 import { sendEmail } from "./email.service";
 import { getOrCreatePaymentLinkForBill } from "./razorpay.service";
 import { computePenaltyForBill, applyPenaltyToBill } from "./bill.service";
@@ -8,6 +13,7 @@ import { enqueue } from "../jobs/queue";
 import { logger } from "../utils/logger";
 import { numberMoney } from "../utils/money";
 import { NotFoundError } from "../utils/http";
+import { env } from "../config/env";
 
 export interface NotificationPayload {
   type: NotificationType;
@@ -18,6 +24,53 @@ export interface NotificationPayload {
   body?: string;
   days?: number;
   billId?: string;
+  remainingBalance?: string;
+  receiptUrl?: string;
+}
+
+export async function notifyBillGenerated(billId: string) {
+  try {
+    const bill = await prisma.bill.findUnique({
+      where: { id: billId },
+      include: {
+        tenant: { select: { id: true, name: true, phone: true, email: true } },
+        property: { select: { name: true } },
+      },
+    });
+    if (!bill || !bill.tenant?.phone) return;
+
+    const payUrl = await getOrCreatePaymentLinkForBill(bill.id).catch(() => null);
+    const portalUrl = `${env.clientUrl || "https://rent-management-frontend-tawny.vercel.app"}/tenant/login`;
+    const viewUrl = payUrl || portalUrl;
+
+    const dueDateFormatted = new Date(bill.dueDate).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+
+    const body = billGeneratedBody({
+      tenantName: bill.tenant.name,
+      propertyName: bill.property?.name || "your property",
+      billNumber: bill.billNumber,
+      billingMonth: bill.billingMonth,
+      amount: `₹${numberMoney(bill.amount).toLocaleString("en-IN")}`,
+      dueDate: dueDateFormatted,
+      billType: bill.billType,
+      payUrl: viewUrl,
+    });
+
+    await sendNotificationNow({
+      tenantId: bill.tenant.id,
+      billId: bill.id,
+      channel: "WHATSAPP",
+      to: bill.tenant.phone,
+      type: "RENT_DUE",
+      body,
+    });
+  } catch (err) {
+    logger.error("Failed to send WhatsApp bill notification", { billId, err: String(err) });
+  }
 }
 
 export async function enqueueNotification(tenantId: string, payload: NotificationPayload) {
@@ -28,6 +81,11 @@ export async function enqueueNotification(tenantId: string, payload: Notificatio
   if (!tenant) return;
 
   if (payload.type === "PAYMENT_CONFIRMATION") {
+    const portalUrl = `${env.clientUrl || "https://rent-management-frontend-tawny.vercel.app"}/tenant/login`;
+    const receiptDocUrl = payload.receiptNumber
+      ? `${portalUrl}`
+      : portalUrl;
+
     const body =
       payload.body ??
       paymentConfirmationBody({
@@ -35,25 +93,29 @@ export async function enqueueNotification(tenantId: string, payload: Notificatio
         amount: "₹" + (payload.amount ? numberMoney(payload.amount).toFixed(2) : "0"),
         receiptNumber: payload.receiptNumber ?? "",
         method: payload.method ?? "",
+        remainingBalance: payload.remainingBalance,
+        receiptUrl: payload.receiptUrl || receiptDocUrl,
       });
-    await enqueue("SEND_NOTIFICATION" as JobType, {
+
+    await sendNotificationNow({
       tenantId: tenant.id,
       billId: payload.billId,
       channel: "WHATSAPP",
       to: tenant.phone,
       type: payload.type,
       body,
-    });
+    }).catch(() => null);
+
     if (tenant.email) {
-      await enqueue("SEND_NOTIFICATION" as JobType, {
+      await sendNotificationNow({
         tenantId: tenant.id,
         billId: payload.billId,
         channel: "EMAIL",
         to: tenant.email,
         type: payload.type,
-        subject: "Payment Confirmation - C2D Rentals",
+        subject: "Payment Confirmation & Receipt - Rentals",
         body,
-      });
+      }).catch(() => null);
     }
   }
 }

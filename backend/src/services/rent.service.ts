@@ -162,7 +162,7 @@ export async function autoGenerateMonthlyRent(targetMonth?: string, actorId?: st
       });
 
       if (!existingBill) {
-        await prisma.bill.create({
+        const newBill = await prisma.bill.create({
           data: {
             billNumber: await generateBillNumber(String(billingBillPrefix ?? "INV")),
             tenantId: tenant.id,
@@ -185,6 +185,9 @@ export async function autoGenerateMonthlyRent(targetMonth?: string, actorId?: st
             createdById: actorId ?? null,
           },
         });
+
+        const { notifyBillGenerated } = await import("./notification.service");
+        await notifyBillGenerated(newBill.id).catch(() => null);
       }
 
       created.push(record.id);

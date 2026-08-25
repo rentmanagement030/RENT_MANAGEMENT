@@ -362,6 +362,9 @@ export async function createBill(input: BillInput, req: Request, actorId: string
     metadata: { billNumber, billType: input.billType, billingMonth: input.billingMonth, amount: input.amount },
   }, actorId);
 
+  const { notifyBillGenerated } = await import("./notification.service");
+  await notifyBillGenerated(bill.id).catch(() => null);
+
   return bill;
 }
 
@@ -594,6 +597,9 @@ export async function generateMonthlyBills(
         },
       });
       created.push(bill.id);
+
+      const { notifyBillGenerated } = await import("./notification.service");
+      await notifyBillGenerated(bill.id).catch(() => null);
     } else {
       skipped.push(tenant.id);
     }

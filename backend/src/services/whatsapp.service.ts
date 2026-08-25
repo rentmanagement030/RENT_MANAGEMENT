@@ -98,22 +98,99 @@ export function paymentConfirmationBody(opts: {
   amount: string;
   receiptNumber: string;
   method: string;
+  remainingBalance?: string;
+  receiptUrl?: string;
 }): string {
   const methodLabel: Record<string, string> = {
     RAZORPAY_UPI: "UPI (Razorpay)",
     CASH: "Cash",
+    UPI: "UPI",
+    MIXED: "Cash + UPI",
     BANK_TRANSFER_DD: "Bank Transfer / DD",
   };
-  return [
+  const parts = [
     `Dear ${opts.tenantName},`,
     ``,
-    `Payment of ${opts.amount} received via ${methodLabel[opts.method] ?? opts.method}.`,
-    `Receipt: ${opts.receiptNumber}`,
+    `Payment of ${opts.amount} has been received successfully via ${methodLabel[opts.method] ?? opts.method}.`,
+    `Receipt Number: ${opts.receiptNumber}`,
+  ];
+  if (opts.remainingBalance) {
+    parts.push(`Remaining Balance: ${opts.remainingBalance}`);
+  }
+  if (opts.receiptUrl) {
+    parts.push(``, `Download / View Payment Receipt:\n${opts.receiptUrl}`);
+  }
+  parts.push(
     ``,
-    `Thank you.`,
+    `Thank you for your payment.`,
     ``,
     `- ${env.nodeEnv === "production" ? "Rental Management" : "C2D Tech Rentals"}`,
-  ].join("\n");
+  );
+  return parts.join("\n");
+}
+
+export function billGeneratedBody(opts: {
+  tenantName: string;
+  propertyName: string;
+  billNumber: string;
+  billingMonth: string;
+  amount: string;
+  dueDate: string;
+  billType?: string;
+  payUrl?: string;
+}): string {
+  const parts = [
+    `Dear ${opts.tenantName},`,
+    ``,
+    `Your ${opts.billType || "Rent"} Bill (${opts.billNumber}) for ${opts.billingMonth} has been generated for ${opts.propertyName}.`,
+    ``,
+    `Amount Due: ${opts.amount}`,
+    `Due Date: ${opts.dueDate}`,
+  ];
+  if (opts.payUrl) {
+    parts.push(``, `Pay / View Invoice Online:\n${opts.payUrl}`);
+  }
+  parts.push(
+    ``,
+    `Kindly ensure payment on or before the due date to avoid late fees.`,
+    ``,
+    `- ${env.nodeEnv === "production" ? "Rental Management" : "C2D Tech Rentals"}`,
+  );
+  return parts.join("\n");
+}
+
+export function rentOutstandingReminderBody(opts: {
+  tenantName: string;
+  propertyName: string;
+  outstandingAmount: string;
+  dueDate: string;
+  daysOverdue?: number;
+  payUrl?: string;
+}): string {
+  const daysOverdue = opts.daysOverdue ?? 0;
+  const isOverdue = daysOverdue > 0;
+  const statusLine = isOverdue
+    ? `⚠️ This payment is OVERDUE by ${daysOverdue} day${daysOverdue > 1 ? "s" : ""}.`
+    : `Due Date: ${opts.dueDate}`;
+
+  const parts = [
+    `Dear ${opts.tenantName},`,
+    ``,
+    `This is a gentle daily reminder regarding your outstanding dues for ${opts.propertyName}.`,
+    ``,
+    `Total Outstanding: ${opts.outstandingAmount}`,
+    statusLine,
+  ];
+  if (opts.payUrl) {
+    parts.push(``, `Pay Online:\n${opts.payUrl}`);
+  }
+  parts.push(
+    ``,
+    `If you have already made the payment, please disregard this reminder.`,
+    ``,
+    `- ${env.nodeEnv === "production" ? "Rental Management" : "C2D Tech Rentals"}`,
+  );
+  return parts.join("\n");
 }
 
 export function agreementSigningBody(opts: {
@@ -136,6 +213,6 @@ export function agreementSigningBody(opts: {
     ``,
     `This signing link will remain active for ${opts.expiresDays || 7} days.`,
     ``,
-    `- C2D Rentals Management`,
+    `- ${env.nodeEnv === "production" ? "Rental Management" : "C2D Tech Rentals"}`,
   ].join("\n");
 }

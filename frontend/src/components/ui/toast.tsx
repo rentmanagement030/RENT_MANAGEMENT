@@ -57,20 +57,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <ToastPrimitive.Root
             key={t.id}
             className={cn(
-              "pointer-events-auto relative flex w-full items-start gap-3 rounded-lg border bg-background p-4 shadow-lg",
+              "pointer-events-auto relative flex w-full items-start gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl text-slate-900 transition-all animate-in slide-in-from-bottom-2 fade-in",
             )}
             onOpenChange={(open) => {
               if (!open) dismiss(t.id);
             }}
           >
             {t.type === "success" && <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />}
-            {t.type === "error" && <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600" />}
-            {t.type === "info" && <Info className="mt-0.5 size-5 shrink-0 text-sky-600" />}
+            {t.type === "error" && <AlertCircle className="mt-0.5 size-5 shrink-0 text-rose-600" />}
+            {t.type === "info" && <Info className="mt-0.5 size-5 shrink-0 text-blue-600" />}
             <div className="flex-1 space-y-1">
-              <ToastPrimitive.Title className="text-sm font-medium">{t.title}</ToastPrimitive.Title>
-              {t.description && <ToastPrimitive.Description className="text-xs text-muted-foreground">{t.description}</ToastPrimitive.Description>}
+              <ToastPrimitive.Title className="text-sm font-bold text-slate-900 tracking-tight leading-snug">
+                {t.title}
+              </ToastPrimitive.Title>
+              {t.description && (
+                <ToastPrimitive.Description className="text-xs font-medium text-slate-600 leading-relaxed">
+                  {t.description}
+                </ToastPrimitive.Description>
+              )}
             </div>
-            <ToastPrimitive.Close className="shrink-0 rounded-md p-1 opacity-60 hover:opacity-100">
+            <ToastPrimitive.Close className="shrink-0 rounded-lg p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer">
               <X className="size-4" />
             </ToastPrimitive.Close>
           </ToastPrimitive.Root>
