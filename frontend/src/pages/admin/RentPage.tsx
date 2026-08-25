@@ -264,16 +264,7 @@ export default function RentPage() {
         </div>
       </div>
 
-      {/* 2. Collection Summary Bar (Unified Cross-Page Financial Banner) */}
-      <FinancialSummaryBanner
-        grossBilled={totalExpected}
-        billedCollections={totalPaid}
-        totalCashInflow={summary?.totalCashInflow ?? totalPaid}
-        totalOutstanding={totalOutstanding}
-        billingMonthLabel={formatMonthLabel(monthFilter)}
-      />
-
-      {/* 3. Search & Filter Bar */}
+      {/* Search & Filter Bar */}
       <Card className="border border-slate-200 bg-white shadow-2xs rounded-2xl overflow-hidden">
         <CardContent className="p-4 sm:p-5 space-y-4">
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 items-center">
