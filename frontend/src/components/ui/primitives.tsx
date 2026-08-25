@@ -157,6 +157,7 @@ export function Select({
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const options = useMemo(() => parseSelectChildren(children), [children]);
@@ -195,7 +196,12 @@ export function Select({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        (!menuRef.current || !menuRef.current.contains(target))
+      ) {
         setIsOpen(false);
       }
     }
@@ -265,6 +271,7 @@ export function Select({
 
       {isOpen && dropdownPos && createPortal(
         <div
+          ref={menuRef}
           style={{
             position: "fixed",
             top: dropdownPos.top,
