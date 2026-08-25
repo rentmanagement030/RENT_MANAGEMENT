@@ -65,18 +65,16 @@ function toAgreementView(a: {
 
   return {
     ...rest,
-    document: (documentStorageKey || id)
-      ? {
-          name: documentName ?? `Agreement-${rest.agreementNumber ?? id}.pdf`,
-          mimeType: documentMimeType ?? "application/pdf",
-          size: documentSize ?? 0,
-          url: documentStorageKey ? `/api/files/${signDownloadToken(documentStorageKey, 300)}` : `/api/rent/agreements/${id}/document`,
-        }
-      : null,
-    signedPdf: (signedPdfUrl || isSigned)
+    document: {
+      name: documentName ?? `Agreement-${rest.agreementNumber ?? id}.pdf`,
+      mimeType: documentMimeType ?? "application/pdf",
+      size: documentSize ?? 0,
+      url: `/rent/agreements/${id}/document`,
+    },
+    signedPdf: isSigned
       ? {
           name: `Signed-Agreement-${rest.agreementNumber ?? "v" + rest.version}.pdf`,
-          url: signedPdfUrl ? `/api/files/${signDownloadToken(signedPdfUrl, 300)}` : `/api/rent/agreements/${id}/signed-document`,
+          url: `/rent/agreements/${id}/signed-document`,
         }
       : null,
   };

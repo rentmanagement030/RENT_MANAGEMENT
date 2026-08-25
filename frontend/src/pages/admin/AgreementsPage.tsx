@@ -494,11 +494,9 @@ export default function AgreementsPage() {
                   <tbody className="divide-y divide-slate-100 bg-white font-medium">
                     {data.items.map((ag) => {
                       const isSigned = ag.isLocked || ag.status === "SIGNED" || ag.status === "COMPLETED";
-                      const docUrl = downloadUrl(
-                        isSigned
-                          ? (ag.signedPdf?.url || `/rent/agreements/${ag.id}/signed-document`)
-                          : (ag.document?.url || `/rent/agreements/${ag.id}/document`)
-                      );
+                      const docUrl = isSigned
+                        ? (ag.signedPdf?.url || `/rent/agreements/${ag.id}/signed-document`)
+                        : (ag.document?.url || `/rent/agreements/${ag.id}/document`);
 
                       const tenantPhone = ag.tenant?.phone ?? "";
                       const cleanPhone = tenantPhone.replace(/\D/g, "");
@@ -847,11 +845,9 @@ function AgreementActionMenu({
 
   const status = agreement.status;
   const isSigned = agreement.isLocked || status === "SIGNED" || status === "COMPLETED";
-  const docUrl = downloadUrl(
-    isSigned
-      ? (agreement.signedPdf?.url || `/rent/agreements/${agreement.id}/signed-document`)
-      : (agreement.document?.url || `/rent/agreements/${agreement.id}/document`)
-  );
+  const docUrl = isSigned
+    ? (agreement.signedPdf?.url || `/rent/agreements/${agreement.id}/signed-document`)
+    : (agreement.document?.url || `/rent/agreements/${agreement.id}/document`);
 
   const agrNo = formatAgreementNo(agreement.agreementNumber, agreement.id);
 
@@ -1219,11 +1215,9 @@ function AgreementDetailModal({
   if (!agreement) return null;
 
   const isSigned = agreement.isLocked || agreement.status === "SIGNED" || agreement.status === "COMPLETED";
-  const docUrl = downloadUrl(
-    isSigned
-      ? (agreement.signedPdf?.url || `/rent/agreements/${agreement.id}/signed-document`)
-      : (agreement.document?.url || `/rent/agreements/${agreement.id}/document`)
-  );
+  const docUrl = isSigned
+    ? (agreement.signedPdf?.url || `/rent/agreements/${agreement.id}/signed-document`)
+    : (agreement.document?.url || `/rent/agreements/${agreement.id}/document`);
 
   const tenantName = agreement.tenant?.name ?? "Resident";
   const propertyName = agreement.property?.name ?? "Property";
