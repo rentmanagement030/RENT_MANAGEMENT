@@ -29,7 +29,7 @@ export const propertyImageSchema = z.object({
   url: z.string().min(1).max(2000),
   storageKey: z.string().max(500).nullable().optional(),
   isPrimary: z.boolean().optional(),
-  type: z.enum(["GALLERY", "FLOOR_PLAN", "EXTERIOR", "OTHER"]).optional(),
+  type: z.enum(["GALLERY", "PHOTO", "FLOOR_PLAN", "EXTERIOR", "OTHER"]).optional().or(z.string().optional()),
   sortOrder: z.coerce.number().int().min(0).optional(),
 });
 

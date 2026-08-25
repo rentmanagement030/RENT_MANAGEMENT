@@ -1400,7 +1400,7 @@ export function PropertyFormDialog({
           url: u.url,
           storageKey: u.storageKey ?? null,
           isPrimary: images.length === 0 && idx === 0,
-          type: "PHOTO",
+          type: "GALLERY",
           sortOrder: images.length + idx,
         })),
       ];
@@ -1452,15 +1452,15 @@ export function PropertyFormDialog({
       };
       const savedProp = property ? await api.updateProperty(property.id, body) : await api.createProperty(body);
 
-      // Save configured homes if creating a new VILLA, MULTI_UNIT_HOUSE, or APARTMENT
+      // Save configured homes (including photos, bedrooms, bathrooms) if creating a new VILLA, MULTI_UNIT_HOUSE, or APARTMENT
       if (!property && (form.type === "VILLA" || form.type === "MULTI_UNIT_HOUSE" || form.type === "APARTMENT") && formHomes.length > 0) {
         for (const item of formHomes) {
           await api.createHome(savedProp.id, {
             floor: item.floor || "Ground Floor",
             homeNumber: item.homeNumber,
-            homeType: item.homeType,
+            homeType: item.homeType || "2 BHK",
             rent: Number(item.rent),
-            advance: Number(item.advance || 0),
+            advance: Number(item.advance || item.deposit || 0),
             deposit: Number(item.deposit || 0),
             dueDay: Number(item.dueDay || 5),
             latePenalty: Number(item.latePenalty || 50),
@@ -1469,15 +1469,27 @@ export function PropertyFormDialog({
             ebMeterNumber: item.ebMeterNumber || undefined,
             waterConnectionType: item.waterConnectionType || "INDIVIDUAL",
             waterConsumerNumber: item.waterConsumerNumber || undefined,
+            builtUpArea: item.builtUpArea ? Number(item.builtUpArea) : undefined,
+            bedrooms: item.bedrooms ? Number(item.bedrooms) : undefined,
+            bathrooms: item.bathrooms ? Number(item.bathrooms) : undefined,
+            imageUrls: Array.isArray(item.imageUrls) ? item.imageUrls : [],
           });
         }
       }
 
       // Save property images together upon explicit form submission
-      await api.setPropertyImages(
-        savedProp.id,
-        images.map((i) => ({ url: i.url, storageKey: i.storageKey ?? undefined, isPrimary: i.isPrimary })),
-      );
+      if (images.length > 0) {
+        await api.setPropertyImages(
+          savedProp.id,
+          images.map((i, idx) => ({
+            url: i.url,
+            storageKey: i.storageKey ?? undefined,
+            isPrimary: i.isPrimary ?? idx === 0,
+            type: "GALLERY",
+            sortOrder: idx,
+          })),
+        );
+      }
       return savedProp;
     },
     onSuccess: (p) => {
@@ -1971,9 +1983,17 @@ export function PropertyFormDialog({
                 </Button>
               ) : (
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={() => {
+                    if (!form.name.trim() || !form.address.trim() || !form.city.trim()) {
+                      toastError("Required fields missing", "Please fill in Property Name, Address, and City.");
+                      setWizardStep(1);
+                      return;
+                    }
+                    mutation.mutate();
+                  }}
                   loading={mutation.isPending}
-                  className="h-10 text-xs font-black bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md"
+                  className="h-10 text-xs font-black bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md cursor-pointer"
                 >
                   {property ? "Save Property Changes" : "Create Property"}
                 </Button>
