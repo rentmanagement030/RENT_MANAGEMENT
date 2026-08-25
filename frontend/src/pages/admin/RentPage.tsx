@@ -199,12 +199,17 @@ export default function RentPage() {
     return true;
   });
 
-  // Authoritative Financial Summary from Central Financial Engine DTO
+  // Strict Rent-Only Calculations (Excluding EB, Water, Maintenance)
+  const itemsRentBilled = rawItems.reduce((acc, r) => acc + (Number(r.rent) || 0), 0);
+  const itemsRentPaid = rawItems.reduce((acc, r) => acc + (Number(r.paidAmount) || 0), 0);
+  const itemsRentDue = rawItems.reduce((acc, r) => acc + (Number(r.outstanding) || 0), 0);
+
   const summary = (data as any)?.summary;
-  const totalExpected = summary?.totalExpectedRent ?? 0;
-  const totalPaid = summary?.totalCollectedRent ?? 0;
-  const totalOutstanding = summary?.totalOutstandingRent ?? 0;
-  const collectionRate = summary?.collectionRate ?? 0;
+  // Use direct items sum if available to strictly isolate pure base rent (e.g. ₹5,806.46)
+  const totalExpected = rawItems.length > 0 ? itemsRentBilled : (summary?.totalExpectedRent ?? 0);
+  const totalPaid = rawItems.length > 0 ? itemsRentPaid : (summary?.totalCollectedRent ?? 0);
+  const totalOutstanding = rawItems.length > 0 ? itemsRentDue : (summary?.totalOutstandingRent ?? 0);
+  const collectionRate = totalExpected > 0 ? (totalPaid / totalExpected) * 100 : 0;
 
   const hasActiveFilters = !!(search || statusFilter || propertyFilter || monthFilter !== currentMonth());
 
