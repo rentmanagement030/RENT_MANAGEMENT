@@ -169,7 +169,12 @@ export default function TenantDetailPage() {
     : null;
 
   const portalUrl = cleanPhone
-    ? `https://wa.me/${waPhone}?text=${encodeURIComponent(`Hi ${tenant.name}, access your Tenant Portal here:\nURL: ${window.location.origin}/tenant/login\nPhone: ${tenant.phone}`)}`
+    ? `https://wa.me/${waPhone}?text=${encodeURIComponent(
+        `Hello ${tenant.name},\n\n` +
+        `Access your C2D Rentals Tenant Portal here:\n` +
+        `${window.location.origin}/tenant/login?phone=${cleanPhone}\n\n` +
+        `Registered Mobile: ${tenant.phone}`
+      )}`
     : null;
 
   return (

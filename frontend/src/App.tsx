@@ -84,6 +84,10 @@ const router = createBrowserRouter([
     element: <LazyPage><TenantLoginPage /></LazyPage>,
   },
   {
+    path: "/tenant/login/*",
+    element: <LazyPage><TenantLoginPage /></LazyPage>,
+  },
+  {
     path: "/tenant",
     element: <LazyPage><TenantDashboardPage /></LazyPage>,
   },

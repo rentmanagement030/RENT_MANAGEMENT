@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Lock, Phone, ArrowRight, Building2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { validatePhone } from "@/lib/validation";
@@ -8,9 +8,29 @@ import { Button, Card, CardContent, Input, Label } from "@/components/ui/primiti
 
 export default function TenantLoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { success, error: toastError } = useToast();
   const [form, setForm] = useState({ phone: "", password: "" });
   const [loading, setLoading] = useState(false);
+
+  // Auto-detect and populate phone number if passed via URL or malformed WhatsApp link
+  useEffect(() => {
+    let rawPhone = searchParams.get("phone") || searchParams.get("Phone") || "";
+    if (!rawPhone) {
+      // Check if phone is encoded in pathname e.g. /tenant/login%20Phone:%207904006320
+      const fullPath = decodeURIComponent(location.pathname + location.search);
+      const match = fullPath.match(/(\d{10})/);
+      if (match && match[1]) {
+        rawPhone = match[1];
+      }
+    }
+    if (rawPhone) {
+      const digits = rawPhone.replace(/\D/g, "");
+      const clean = digits.length === 12 && digits.startsWith("91") ? digits.slice(2) : digits;
+      setForm((prev) => ({ ...prev, phone: clean }));
+    }
+  }, [searchParams, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
