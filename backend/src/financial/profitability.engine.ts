@@ -128,7 +128,7 @@ export async function computePropertyProfitability(filter: PeriodFilter = {}): P
 
   const aggregateExpected = rows.reduce((s, r) => s + r.expectedIncome, 0);
   const aggregateCollected = rows.reduce((s, r) => s + r.collectedIncome, 0);
-  const aggregateExpenses = rows.reduce((s, r) => s + r.operatingExpenses, 0) + unallocatedExpenses;
+  const aggregateExpenses = rows.length > 0 ? rows.reduce((s, r) => s + r.operatingExpenses, 0) : unallocatedExpenses;
   const aggregateOutstanding = rows.reduce((s, r) => s + r.totalOutstanding, 0);
   const aggregateNet = aggregateCollected - aggregateExpenses;
 
