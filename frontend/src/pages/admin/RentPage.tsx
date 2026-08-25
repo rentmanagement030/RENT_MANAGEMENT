@@ -264,7 +264,62 @@ export default function RentPage() {
         </div>
       </div>
 
-      {/* Search & Filter Bar */}
+      {/* 2. Rent-Only Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="rounded-2xl border border-slate-200 bg-white shadow-2xs">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Rent Billed</span>
+              <div className="flex size-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                <FileText className="size-4" />
+              </div>
+            </div>
+            <p className="mt-2 text-lg sm:text-2xl font-black text-slate-900">{formatINR(totalExpected)}</p>
+            <p className="mt-0.5 text-[11px] font-bold text-slate-400 truncate">{formatMonthLabel(monthFilter)} Rent</p>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-slate-200 bg-white shadow-2xs">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700">Rent Collected</span>
+              <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <CheckCircle2 className="size-4" />
+              </div>
+            </div>
+            <p className="mt-2 text-lg sm:text-2xl font-black text-emerald-600">{formatINR(totalPaid)}</p>
+            <p className="mt-0.5 text-[11px] font-bold text-emerald-600/80 truncate">Received for {formatMonthLabel(monthFilter)}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-slate-200 bg-white shadow-2xs">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase tracking-wider text-rose-700">Rent Outstanding</span>
+              <div className="flex size-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+                <AlertCircle className="size-4" />
+              </div>
+            </div>
+            <p className="mt-2 text-lg sm:text-2xl font-black text-rose-600">{formatINR(totalOutstanding)}</p>
+            <p className="mt-0.5 text-[11px] font-bold text-rose-600/80 truncate">Unpaid Rent Balance</p>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-slate-200 bg-white shadow-2xs">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase tracking-wider text-blue-700">Collection Rate</span>
+              <div className="flex size-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <Wallet className="size-4" />
+              </div>
+            </div>
+            <p className="mt-2 text-lg sm:text-2xl font-black text-blue-600">{collectionRate.toFixed(1)}%</p>
+            <p className="mt-0.5 text-[11px] font-bold text-blue-600/80 truncate">Rent Recovery</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 3. Search & Filter Bar */}
       <Card className="border border-slate-200 bg-white shadow-2xs rounded-2xl overflow-hidden">
         <CardContent className="p-4 sm:p-5 space-y-4">
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 items-center">

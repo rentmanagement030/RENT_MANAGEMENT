@@ -220,7 +220,7 @@ export async function listRentRecords(query: Record<string, unknown>) {
     ...(billingMonth ? { billingMonth } : {}),
   };
 
-  const [total, records] = await Promise.all([
+  const [total, records, rentAggregation] = await Promise.all([
     prisma.rentRecord.count({ where }),
     prisma.rentRecord.findMany({
       where,
@@ -229,18 +229,31 @@ export async function listRentRecords(query: Record<string, unknown>) {
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
+    prisma.rentRecord.aggregate({
+      where,
+      _sum: {
+        rentAmount: true,
+        paidAmount: true,
+        dueAmount: true,
+      },
+    }),
   ]);
+
+  const totalRentBilled = Number(rentAggregation._sum.rentAmount ?? 0);
+  const totalRentPaid = Number(rentAggregation._sum.paidAmount ?? 0);
+  const totalRentDue = Number(rentAggregation._sum.dueAmount ?? 0);
+  const rentCollectionRate = totalRentBilled > 0 ? (totalRentPaid / totalRentBilled) * 100 : 0;
 
   const pagination = buildPagination(records, total, { page, pageSize });
 
   return {
     ...pagination,
     summary: {
-      totalExpectedRent: summary.totalBilled,
-      totalCollectedRent: summary.collected,
-      totalOutstandingRent: summary.allTimeOutstanding ?? summary.outstanding,
-      totalCashInflow: summary.totalPaymentsReceived,
-      collectionRate: summary.collectionRate,
+      totalExpectedRent: totalRentBilled,
+      totalCollectedRent: totalRentPaid,
+      totalOutstandingRent: totalRentDue,
+      totalCashInflow: totalRentPaid,
+      collectionRate: rentCollectionRate,
     },
   };
 }
