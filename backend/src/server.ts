@@ -70,13 +70,25 @@ async function bootstrapWorker() {
           status: "PENDING",
         },
       }).catch(() => {});
-      await prisma.rentRecord.deleteMany({
+
+      const futureRentRecords = await prisma.rentRecord.findMany({
         where: {
           billingMonth: { gt: currentMonthStr },
           paidAmount: 0,
           status: "PENDING",
         },
-      }).catch(() => {});
+        select: { id: true },
+      }).catch(() => []);
+
+      if (futureRentRecords && futureRentRecords.length > 0) {
+        const ids = futureRentRecords.map((r) => r.id);
+        await prisma.paymentLink.deleteMany({
+          where: { rentRecordId: { in: ids } },
+        }).catch(() => {});
+        await prisma.rentRecord.deleteMany({
+          where: { id: { in: ids } },
+        }).catch(() => {});
+      }
       logger.info("Roles and permissions ensured, premature future records cleaned");
     }
 
