@@ -39,9 +39,9 @@ function startOfLocalDay(d: Date): Date {
  * afterwards. Future months use the tenant's current rent automatically.
  */
 export async function computeMonthRentForTenant(
-  tenant: { id: string; rent: Prisma.Decimal },
+  tenant: { id: string; rent: Prisma.Decimal; joiningDate?: Date | null },
   billingMonth: string,
-  mode: "FULL_MONTH" | "PRORATED",
+  mode: "FULL_MONTH" | "PRORATED" = "PRORATED",
 ): Promise<Prisma.Decimal> {
   const [y, m] = billingMonth.split("-").map((n) => Number(n));
   if (!y || !m || m < 1 || m > 12) return tenant.rent;
@@ -49,6 +49,31 @@ export async function computeMonthRentForTenant(
   const monthStart = new Date(y, m - 1, 1);
   const nextMonth = new Date(y, m, 1);
   const daysInMonth = Math.round((nextMonth.getTime() - monthStart.getTime()) / MS_PER_DAY);
+
+  // If tenant has joiningDate, check if billing month is before or on joining month
+  if (tenant.joiningDate) {
+    const jDate = new Date(tenant.joiningDate);
+    const joinYear = jDate.getFullYear();
+    const joinMonth = jDate.getMonth() + 1;
+    const joinDay = jDate.getDate();
+    const joinMonthStr = `${joinYear}-${String(joinMonth).padStart(2, "0")}`;
+
+    if (billingMonth < joinMonthStr) {
+      // Tenant had not joined yet in this billing month
+      return new Prisma.Decimal(0);
+    }
+
+    if (billingMonth === joinMonthStr && joinDay > 1) {
+      // Mid-month joining pro-rata calculation:
+      // Formula: (Rent / daysInMonth) * remainingDays
+      // E.g., for 10000 rent on 15 Aug (31 days): (10000 / 31) * 16 = 5161.29
+      const remainingDays = Math.max(1, daysInMonth - joinDay);
+      const fullRent = tenant.rent.toNumber();
+      const perDayRent = fullRent / daysInMonth;
+      const proratedRent = Math.round(perDayRent * remainingDays * 100) / 100;
+      return new Prisma.Decimal(proratedRent);
+    }
+  }
 
   const transfers = await prisma.tenantTransferHistory.findMany({
     where: { tenantId: tenant.id },
@@ -122,12 +147,17 @@ export function computeBillStatus(
 }
 
 export async function listBills(query: Record<string, unknown>) {
+  // Automatically generate current / queried month bills without waiting for manual action
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const billingMonth = query.billingMonth ? String(query.billingMonth) : undefined;
+  await generateMonthlyBills(billingMonth || currentMonth).catch(() => null);
+
   const { page, pageSize } = parsePagination(query);
   const tenantId = query.tenantId ? String(query.tenantId) : undefined;
   const propertyId = query.propertyId ? String(query.propertyId) : undefined;
   const billType = query.billType ? String(query.billType) : undefined;
   const status = query.status ? String(query.status) : undefined;
-  const billingMonth = query.billingMonth ? String(query.billingMonth) : undefined;
   const search = String(query.search ?? "").trim();
 
   const where: Prisma.BillWhereInput = {

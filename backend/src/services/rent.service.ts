@@ -5,6 +5,8 @@ import { buildPagination, parsePagination } from "../utils/pagination";
 import { add, sub, zero, toDecimal } from "../utils/money";
 import { writeAuditLog } from "../utils/audit";
 import { getPeriodFinancialSummary } from "./financial.service";
+import { getSettings } from "./settings.service";
+import { generateBillNumber, computeBillStatus } from "./bill.service";
 import type { Request } from "express";
 
 const rentInclude = {
@@ -42,12 +44,169 @@ export function computeStatus(
   return dueDate < new Date() ? "OVERDUE" : "PENDING";
 }
 
+/**
+ * Automatically generate monthly rent records and bills for all active tenants.
+ * Features:
+ * - Strict duplicate prevention (idempotent per tenant & billingMonth)
+ * - Pro-rata rent calculation for mid-month joinings:
+ *   (e.g., joins 15th Aug: 10000 / 31 = 322.58 * 16 = 5161.29)
+ * - Full normal rent and standard due date for subsequent months
+ */
+export async function autoGenerateMonthlyRent(targetMonth?: string, actorId?: string) {
+  const now = new Date();
+  const billingMonth = targetMonth || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const [y, m] = billingMonth.split("-").map((n) => Number(n));
+  if (!y || !m || m < 1 || m > 12) return { created: 0, skipped: 0 };
+
+  const { billingDueDay, billingBillPrefix } = await getSettings(false).catch(() => ({ billingDueDay: 5, billingBillPrefix: "INV" }));
+  const defaultDueDay = Number(billingDueDay ?? 5);
+
+  const activeTenants = await prisma.tenant.findMany({
+    where: { status: "ACTIVE", propertyId: { not: null } },
+  });
+
+  const created: string[] = [];
+  const skipped: string[] = [];
+
+  for (const tenant of activeTenants) {
+    const propertyId = tenant.propertyId!;
+
+    // 1. Strict Duplicate Check
+    const existing = await prisma.rentRecord.findUnique({
+      where: {
+        tenantId_billingMonth: {
+          tenantId: tenant.id,
+          billingMonth,
+        },
+      },
+    });
+
+    if (existing) {
+      skipped.push(tenant.id);
+      continue;
+    }
+
+    // 2. Joining date validation & Mid-month Pro-rata calculation
+    let joinDay = 1;
+    let isJoiningMonth = false;
+    if (tenant.joiningDate) {
+      const jDate = new Date(tenant.joiningDate);
+      const joinYear = jDate.getFullYear();
+      const joinMonth = jDate.getMonth() + 1;
+      joinDay = jDate.getDate();
+      const joinMonthStr = `${joinYear}-${String(joinMonth).padStart(2, "0")}`;
+
+      if (billingMonth < joinMonthStr) {
+        // Tenant has not joined yet in this billing month
+        skipped.push(tenant.id);
+        continue;
+      }
+      if (billingMonth === joinMonthStr) {
+        isJoiningMonth = true;
+      }
+    }
+
+    const daysInMonth = new Date(y, m, 0).getDate();
+    let monthRent: Prisma.Decimal;
+
+    if (isJoiningMonth && joinDay > 1) {
+      // Pro-rata for mid-month joining
+      const remainingDays = Math.max(1, daysInMonth - joinDay);
+      const fullRent = tenant.rent.toNumber();
+      const perDayRent = fullRent / daysInMonth;
+      const proratedRent = Math.round(perDayRent * remainingDays * 100) / 100;
+      monthRent = new Prisma.Decimal(proratedRent);
+    } else {
+      monthRent = tenant.rent;
+    }
+
+    // Determine due date
+    const dueDay = isJoiningMonth ? Math.max(defaultDueDay, joinDay) : defaultDueDay;
+    const dueDate = new Date(y, m - 1, Math.min(dueDay, daysInMonth));
+
+    // Previous outstanding balance calculation
+    const previous = await prisma.rentRecord.findFirst({
+      where: { tenantId: tenant.id },
+      orderBy: { billingMonth: "desc" },
+    });
+    const previousBalance = previous ? previous.outstanding : zero();
+    const total = add(previousBalance, monthRent);
+    const status = computeStatus(0, 0, dueDate, total);
+
+    try {
+      const record = await prisma.rentRecord.create({
+        data: {
+          tenantId: tenant.id,
+          propertyId,
+          homeId: tenant.homeId || null,
+          billingMonth,
+          dueDate,
+          rent: monthRent,
+          additionalCharges: zero(),
+          previousBalance,
+          paidAmount: zero(),
+          outstanding: total,
+          status,
+        },
+      });
+
+      // Ensure corresponding Bill is also created
+      const existingBill = await prisma.bill.findUnique({
+        where: {
+          tenantId_billingMonth_billType: {
+            tenantId: tenant.id,
+            billingMonth,
+            billType: "RENT",
+          },
+        },
+      });
+
+      if (!existingBill) {
+        await prisma.bill.create({
+          data: {
+            billNumber: await generateBillNumber(String(billingBillPrefix ?? "INV")),
+            tenantId: tenant.id,
+            propertyId,
+            rentRecordId: record.id,
+            billType: "RENT",
+            billingMonth,
+            dueDate,
+            graceDate: new Date(dueDate.getTime() + 3 * 24 * 60 * 60 * 1000),
+            amount: monthRent,
+            paidAmount: zero(),
+            penaltyAmount: zero(),
+            outstanding: total,
+            status: computeBillStatus({
+              dueDate,
+              status: "PENDING",
+              paidAmount: zero(),
+              outstanding: total,
+            }),
+            createdById: actorId ?? null,
+          },
+        });
+      }
+
+      created.push(record.id);
+    } catch {
+      skipped.push(tenant.id);
+    }
+  }
+
+  return { created: created.length, skipped: skipped.length };
+}
+
 export async function listRentRecords(query: Record<string, unknown>) {
+  // Automatically generate current / queried month rent dues without waiting for manual action
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const billingMonth = query.billingMonth ? String(query.billingMonth) : undefined;
+  await autoGenerateMonthlyRent(billingMonth || currentMonth).catch(() => null);
+
   const { page, pageSize } = parsePagination(query);
   const tenantId = query.tenantId ? String(query.tenantId) : undefined;
   const propertyId = query.propertyId ? String(query.propertyId) : undefined;
   const status = query.status ? String(query.status) : undefined;
-  const billingMonth = query.billingMonth ? String(query.billingMonth) : undefined;
 
   const summary = await getPeriodFinancialSummary({ billingMonth, propertyId });
 

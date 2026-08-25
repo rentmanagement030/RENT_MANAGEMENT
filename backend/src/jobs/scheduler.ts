@@ -3,7 +3,7 @@ import { prisma } from "../config/prisma";
 import { logger } from "../utils/logger";
 import { enqueue } from "./queue";
 
-const SCHEDULER_INTERVAL_MS = 6 * 60 * 60 * 1000;
+const SCHEDULER_INTERVAL_MS = 60 * 60 * 1000;
 
 async function alreadyQueuedToday(type: JobType): Promise<boolean> {
   const since = new Date();
@@ -22,6 +22,12 @@ export async function runScheduler() {
   try {
     const now = new Date();
     const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    // 1. Direct rent dues & bills auto-generation
+    const { autoGenerateMonthlyRent } = await import("../services/rent.service");
+    await autoGenerateMonthlyRent(month).catch((err) => {
+      logger.error("Scheduler autoGenerateMonthlyRent failed", { err: String(err) });
+    });
 
     if (!(await alreadyQueuedToday("BILL_GENERATION" as JobType))) {
       await enqueue("BILL_GENERATION" as JobType, { billingMonth: month });

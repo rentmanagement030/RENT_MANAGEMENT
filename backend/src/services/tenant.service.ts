@@ -6,6 +6,7 @@ import { writeAuditLog } from "../utils/audit";
 import { signDownloadToken, deleteFile } from "../utils/storage";
 import { autoSetRoomStatus, autoSetPropertyStatus } from "./property.service";
 import { registerOrUpdateTenantAuth } from "./tenantAuth.service";
+import { autoGenerateMonthlyRent } from "./rent.service";
 import type { Request } from "express";
 
 const tenantInclude = {
@@ -220,6 +221,10 @@ export async function createTenant(input: TenantInput, req: Request, actorId: st
 
   await registerOrUpdateTenantAuth(tenant.id, tenant.phone).catch(() => null);
 
+  if (tenant.status === "ACTIVE" && tenant.propertyId) {
+    await autoGenerateMonthlyRent(undefined, actorId).catch(() => null);
+  }
+
   await writeAuditLog(req, {
     action: "tenant.created",
     entityType: "tenant",
@@ -336,6 +341,10 @@ export async function updateTenant(
 
   if (input.phone) {
     await registerOrUpdateTenantAuth(id, input.phone).catch(() => null);
+  }
+
+  if (updated.status === "ACTIVE" && updated.propertyId) {
+    await autoGenerateMonthlyRent(undefined, actorId).catch(() => null);
   }
 
   await writeAuditLog(req, {
