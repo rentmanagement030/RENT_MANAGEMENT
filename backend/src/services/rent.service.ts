@@ -232,16 +232,16 @@ export async function listRentRecords(query: Record<string, unknown>) {
     prisma.rentRecord.aggregate({
       where,
       _sum: {
-        rentAmount: true,
+        rent: true,
         paidAmount: true,
-        dueAmount: true,
+        outstanding: true,
       },
     }),
   ]);
 
-  const totalRentBilled = Number(rentAggregation._sum.rentAmount ?? 0);
-  const totalRentPaid = Number(rentAggregation._sum.paidAmount ?? 0);
-  const totalRentDue = Number(rentAggregation._sum.dueAmount ?? 0);
+  const totalRentBilled = Number(rentAggregation._sum?.rent ?? 0);
+  const totalRentPaid = Number(rentAggregation._sum?.paidAmount ?? 0);
+  const totalRentDue = Number(rentAggregation._sum?.outstanding ?? 0);
   const rentCollectionRate = totalRentBilled > 0 ? (totalRentPaid / totalRentBilled) * 100 : 0;
 
   const pagination = buildPagination(records, total, { page, pageSize });
